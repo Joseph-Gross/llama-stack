@@ -935,7 +935,7 @@ def llama_meta_net_info(model: Model) -> LlamaDownloadInfo:
     elif model.core_model_id == CoreModelId.llama_guard_2_8b:
         folder = "llama-guard-2"
     else:
-        folder = model.huggingface_repo.split("/")[-1]
+        folder = model.huggingface_repo.split("/")[-1] if model.huggingface_repo else "unknown"
         if "Llama-2" in folder:
             folder = folder.lower()
 
