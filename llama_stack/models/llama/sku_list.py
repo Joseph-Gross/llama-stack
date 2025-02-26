@@ -35,6 +35,7 @@ def resolve_model(descriptor: str) -> Optional[Model]:
 
 
 def all_registered_models() -> List[Model]:
+    # Returns a list of all registered Llama models across all model families
     return (
         llama2_family() + llama3_family() + llama3_1_family() + llama3_2_family() + llama3_3_family() + safety_models()
     )
