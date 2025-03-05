@@ -24,7 +24,6 @@ from typing import (
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from llama_stack.apis.common.content_types import InterleavedContent
 from llama_stack.apis.inference import (
     CompletionMessage,
     SamplingParams,

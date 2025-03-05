@@ -17,7 +17,7 @@ from enum import Enum
 from typing import Any, Dict, Literal, Optional, Union
 
 # import all for backwards compatibility
-from llama_models.datatypes import *  # noqa: F403
+from llama_models.datatypes import *  # noqa: F403, F401
 from llama_models.datatypes import BuiltinTool, ToolCall, StopReason, ToolPromptFormat  # noqa: F401
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 from typing_extensions import Annotated
