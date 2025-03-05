@@ -1,0 +1,24 @@
+# Todo List of Files with Syntax Errors
+
+## Import Inconsistencies
+- [ ] /home/ubuntu/repos/llama-stack/llama_stack/apis/common/content_types.py (import inconsistency with ToolCall)
+- [ ] /home/ubuntu/repos/llama-stack/llama_stack/providers/tests/agents/test_agents.py (import inconsistency with BuiltinTool)
+- [ ] /home/ubuntu/repos/llama-stack/llama_stack/providers/tests/agents/test_agent_instance_error_handling.py (import inconsistency with BuiltinTool, StopReason, ToolCall, URL)
+- [ ] /home/ubuntu/repos/llama-stack/llama_stack/providers/tests/integration/test_agent_integration.py (import inconsistency with BuiltinTool)
+
+## Type Annotation Errors
+- [ ] /home/ubuntu/repos/llama-stack/llama_stack/models/llama/prompt_format.py (type annotation error in user_message function)
+- [ ] /home/ubuntu/repos/llama-stack/llama_stack/apis/vector_io/vector_io.py (type annotation errors in Protocol implementation)
+- [ ] /home/ubuntu/repos/llama-stack/docs/examples/01_reproducible_vector_search.py (type annotation errors)
+- [ ] /home/ubuntu/repos/llama-stack/docs/examples/02_error_handling_best_practices.py (type annotation errors)
+- [ ] /home/ubuntu/repos/llama-stack/docs/examples/03_research_workflow_example.py (type annotation errors)
+
+## Undefined Variables
+- [ ] /home/ubuntu/repos/llama-stack/llama_stack/models/llama/datatypes.py (undefined variables: BuiltinTool, ToolCall)
+
+## Abstract Class Instantiation
+- [ ] /home/ubuntu/repos/llama-stack/llama_stack/providers/tests/vector_io/test_sqlite_vec.py (instantiating abstract class SQLiteVecVectorIOAdapter)
+- [ ] /home/ubuntu/repos/llama-stack/llama_stack/providers/tests/vector_io/test_sqlite_vec_error_handling.py (instantiating abstract class SQLiteVecVectorIOAdapter)
+
+## Parameter Errors
+- [ ] /home/ubuntu/repos/llama-stack/llama_stack/providers/tests/agents/test_agent_instance_error_handling.py (missing parameters in ChatAgent instantiation: tempdir, persistence_store)
