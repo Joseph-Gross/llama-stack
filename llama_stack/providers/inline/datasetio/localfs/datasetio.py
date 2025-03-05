@@ -172,11 +172,19 @@ class LocalFSDatasetIOImpl(DatasetIO, DatasetsProtocolPrivate):
         new_rows_df = dataset_impl._validate_dataset_schema(new_rows_df)
         dataset_impl.df = pandas.concat([dataset_impl.df, new_rows_df], ignore_index=True)
 
-        url = str(dataset_info.dataset_def.url)
-        parsed_url = urlparse(url)
+        # Get the URI from the URL object
+        uri = dataset_info.dataset_def.url.uri
+        parsed_url = urlparse(uri)
 
         if parsed_url.scheme == "file" or not parsed_url.scheme:
+            # Extract the file path correctly from the URL
+            # For file:// URLs, parsed_url.path will contain the path
+            # On Windows, the path might start with a / that needs to be removed
             file_path = parsed_url.path
+            if os.name == 'nt' and file_path.startswith('/'):
+                file_path = file_path[1:]
+            
+            # Ensure the directory exists
             os.makedirs(os.path.dirname(file_path), exist_ok=True)
             dataset_impl.df.to_csv(file_path, index=False)
         elif parsed_url.scheme == "data":
