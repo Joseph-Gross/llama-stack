@@ -1,0 +1,32 @@
+name: llama-stack
+channels:
+  - pytorch
+  - conda-forge
+  - defaults
+dependencies:
+  - python>=3.10
+  - pip>=23.0
+  - numpy>=1.24.0
+  - pandas>=2.0.0
+  - pytorch>=2.0.0
+  - torchvision>=0.15.0
+  - pip:
+    - blobfile
+    - fire
+    - httpx
+    - huggingface-hub
+    - jsonschema
+    - llama-models>=0.1.4
+    - llama-stack-client>=0.1.4
+    - prompt-toolkit
+    - python-dotenv
+    - pydantic>=2
+    - requests
+    - rich
+    - setuptools
+    - termcolor
+    - pytest
+    - pytest-asyncio
+    - pytest-html
+    - black
+    - ruff
