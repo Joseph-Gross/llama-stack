@@ -20,6 +20,7 @@ class Api(Enum):
     eval = "eval"
     post_training = "post_training"
     tool_runtime = "tool_runtime"
+    memory = "memory"
 
     telemetry = "telemetry"
 
