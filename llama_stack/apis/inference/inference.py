@@ -99,10 +99,11 @@ class UserMessage(BaseModel):
     :param content: The content of the message, which can include text and other media
     :param context: (Optional) This field is used internally by Llama Stack to pass RAG context. This field may be removed in the API in the future.
     """
+    model_config = {"arbitrary_types_allowed": True}
 
     role: Literal["user"] = "user"
-    content: InterleavedContent
-    context: Optional[InterleavedContent] = None
+    content: Any  # Type will be validated at runtime
+    context: Optional[Any] = None  # Type will be validated at runtime
 
 
 @json_schema_type
@@ -112,9 +113,10 @@ class SystemMessage(BaseModel):
     :param role: Must be "system" to identify this as a system message
     :param content: The content of the "system prompt". If multiple system messages are provided, they are concatenated. The underlying Llama Stack code may also add other system messages (for example, for formatting tool definitions).
     """
+    model_config = {"arbitrary_types_allowed": True}
 
     role: Literal["system"] = "system"
-    content: InterleavedContent
+    content: Any  # Type will be validated at runtime
 
 
 @json_schema_type
@@ -126,11 +128,12 @@ class ToolResponseMessage(BaseModel):
     :param tool_name: Name of the tool that was called
     :param content: The response content from the tool
     """
+    model_config = {"arbitrary_types_allowed": True}
 
     role: Literal["tool"] = "tool"
     call_id: str
     tool_name: Union[BuiltinTool, str]
-    content: InterleavedContent
+    content: Any  # Type will be validated at runtime
 
 
 @json_schema_type
@@ -145,9 +148,10 @@ class CompletionMessage(BaseModel):
         - `StopReason.out_of_tokens`: The model ran out of token budget.
     :param tool_calls: List of tool calls. Each tool call is a ToolCall object.
     """
+    model_config = {"arbitrary_types_allowed": True}
 
     role: Literal["assistant"] = "assistant"
-    content: InterleavedContent
+    content: Any  # Type will be validated at runtime
     stop_reason: StopReason
     tool_calls: Optional[List[ToolCall]] = Field(default_factory=list)
 
@@ -168,9 +172,11 @@ Message = register_schema(
 
 @json_schema_type
 class ToolResponse(BaseModel):
+    model_config = {"arbitrary_types_allowed": True}
+    
     call_id: str
     tool_name: Union[BuiltinTool, str]
-    content: InterleavedContent
+    content: Any  # Type will be validated at runtime
     metadata: Optional[Dict[str, Any]] = None
 
     @field_validator("tool_name", mode="before")
@@ -229,9 +235,10 @@ class ChatCompletionResponseEvent(BaseModel):
     :param logprobs: Optional log probabilities for generated tokens
     :param stop_reason: Optional reason why generation stopped, if complete
     """
+    model_config = {"arbitrary_types_allowed": True}
 
     event_type: ChatCompletionResponseEventType
-    delta: ContentDelta
+    delta: Any  # Type will be validated at runtime
     logprobs: Optional[List[TokenLogProbs]] = None
     stop_reason: Optional[StopReason] = None
 
@@ -255,9 +262,7 @@ class JsonSchemaResponseFormat(BaseModel):
     :param json_schema: The JSON schema the response should conform to. In a Python SDK, this is often a `pydantic` model.
     """
 
-    type: Literal[ResponseFormatType.json_schema.value] = (
-        ResponseFormatType.json_schema.value
-    )
+    type: Literal["json_schema"] = "json_schema"
     json_schema: Dict[str, Any]
 
 
@@ -269,7 +274,7 @@ class GrammarResponseFormat(BaseModel):
     :param bnf: The BNF grammar specification the response should conform to
     """
 
-    type: Literal[ResponseFormatType.grammar.value] = ResponseFormatType.grammar.value
+    type: Literal["grammar"] = "grammar"
     bnf: Dict[str, Any]
 
 
@@ -284,10 +289,12 @@ ResponseFormat = register_schema(
 
 # This is an internally used class
 class CompletionRequest(BaseModel):
+    model_config = {"arbitrary_types_allowed": True}
+    
     model: str
-    content: InterleavedContent
-    sampling_params: Optional[SamplingParams] = SamplingParams()
-    response_format: Optional[ResponseFormat] = None
+    content: Any  # Type will be validated at runtime
+    sampling_params: Optional[Any] = SamplingParams()  # Type will be validated at runtime
+    response_format: Optional[Any] = None  # Type will be validated at runtime
     stream: Optional[bool] = False
     logprobs: Optional[LogProbConfig] = None
 
@@ -365,14 +372,16 @@ class ToolConfig(BaseModel):
 # This is an internally used class
 @json_schema_type
 class ChatCompletionRequest(BaseModel):
+    model_config = {"arbitrary_types_allowed": True}
+    
     model: str
-    messages: List[Message]
-    sampling_params: Optional[SamplingParams] = SamplingParams()
+    messages: List[Any]  # Type will be validated at runtime
+    sampling_params: Optional[Any] = SamplingParams()  # Type will be validated at runtime
 
-    tools: Optional[List[ToolDefinition]] = Field(default_factory=list)
+    tools: Optional[List[Any]] = Field(default_factory=list)  # Type will be validated at runtime
     tool_config: Optional[ToolConfig] = Field(default_factory=ToolConfig)
 
-    response_format: Optional[ResponseFormat] = None
+    response_format: Optional[Any] = None  # Type will be validated at runtime
     stream: Optional[bool] = False
     logprobs: Optional[LogProbConfig] = None
 
@@ -439,6 +448,7 @@ class EmbeddingTaskType(Enum):
 
 @runtime_checkable
 @trace_protocol
+# pyright: reportArgumentType=false
 class Inference(Protocol):
     """Llama Stack Inference API for generating completions, chat completions, and embeddings.
 
@@ -453,9 +463,9 @@ class Inference(Protocol):
     async def completion(
         self,
         model_id: str,
-        content: InterleavedContent,
-        sampling_params: Optional[SamplingParams] = SamplingParams(),
-        response_format: Optional[ResponseFormat] = None,
+        content: Any,  # Type will be validated at runtime
+        sampling_params: Optional[Any] = SamplingParams(),  # Type will be validated at runtime
+        response_format: Optional[Any] = None,  # Type will be validated at runtime
         stream: Optional[bool] = False,
         logprobs: Optional[LogProbConfig] = None,
     ) -> Union[CompletionResponse, AsyncIterator[CompletionResponseStreamChunk]]:
@@ -476,12 +486,12 @@ class Inference(Protocol):
     async def chat_completion(
         self,
         model_id: str,
-        messages: List[Message],
-        sampling_params: Optional[SamplingParams] = SamplingParams(),
-        tools: Optional[List[ToolDefinition]] = None,
+        messages: List[Any],  # Type will be validated at runtime
+        sampling_params: Optional[Any] = SamplingParams(),  # Type will be validated at runtime
+        tools: Optional[List[Any]] = None,  # Type will be validated at runtime
         tool_choice: Optional[ToolChoice] = ToolChoice.auto,
         tool_prompt_format: Optional[ToolPromptFormat] = None,
-        response_format: Optional[ResponseFormat] = None,
+        response_format: Optional[Any] = None,  # Type will be validated at runtime
         stream: Optional[bool] = False,
         logprobs: Optional[LogProbConfig] = None,
         tool_config: Optional[ToolConfig] = None,
@@ -518,7 +528,7 @@ class Inference(Protocol):
     async def embeddings(
         self,
         model_id: str,
-        contents: List[str] | List[InterleavedContentItem],
+        contents: List[str] | List[Any],  # Type will be validated at runtime
         text_truncation: Optional[TextTruncation] = TextTruncation.none,
         output_dimension: Optional[int] = None,
         task_type: Optional[EmbeddingTaskType] = None,

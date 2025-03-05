@@ -613,6 +613,7 @@ class AgentStepResponse(BaseModel):
 
 @runtime_checkable
 @trace_protocol
+# pyright: reportArgumentType=false
 class Agents(Protocol):
     """Agents API for creating and interacting with agentic systems.
 

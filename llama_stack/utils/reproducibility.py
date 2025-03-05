@@ -14,7 +14,7 @@ and configure deterministic behavior for reproducible results.
 from __future__ import annotations
 
 import random
-from typing import Optional
+from typing import Any, Optional
 
 import numpy as np
 
@@ -49,12 +49,12 @@ def set_seed(seed: int = 42) -> None:
 
 
 def get_reproducible_dataloader(
-    dataset: any,
+    dataset: Any,
     batch_size: int,
     shuffle: bool = True,
     seed: Optional[int] = None,
     **kwargs
-) -> any:
+) -> Any:
     """
     Create a reproducible PyTorch DataLoader with consistent shuffling.
     

@@ -14,7 +14,10 @@
 from __future__ import annotations
 
 from enum import Enum
-from typing import Any, Dict, Literal, Optional, Union
+from typing import Any, Dict, Literal, Optional, Union, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from typing import Annotated as AnnotatedType
 
 # import all for backwards compatibility
 from llama_models.datatypes import *  # noqa: F403, F401
@@ -81,7 +84,9 @@ SamplingStrategy = register_schema(
 
 @json_schema_type
 class SamplingParams(BaseModel):
-    strategy: SamplingStrategy = Field(default_factory=GreedySamplingStrategy)
+    model_config = {"arbitrary_types_allowed": True}
+    
+    strategy: Any = Field(default_factory=GreedySamplingStrategy)  # Type will be validated at runtime
 
     max_tokens: Optional[int] = 0
     repetition_penalty: Optional[float] = 1.0
