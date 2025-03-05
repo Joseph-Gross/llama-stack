@@ -4,8 +4,11 @@
 # This source code is licensed under the terms described in the LICENSE file in
 # the root directory of this source tree.
 
+from __future__ import annotations
+
 from datetime import datetime
 from enum import Enum
+
 from typing import (
     Annotated,
     Any,
@@ -26,14 +29,13 @@ from llama_stack.apis.inference import (
     CompletionMessage,
     ResponseFormat,
     SamplingParams,
-    ToolCall,
     ToolChoice,
     ToolConfig,
-    ToolPromptFormat,
     ToolResponse,
     ToolResponseMessage,
     UserMessage,
 )
+from llama_models.datatypes import ToolCall, ToolPromptFormat
 from llama_stack.apis.safety import SafetyViolation
 from llama_stack.apis.tools import ToolDef
 from llama_stack.providers.utils.telemetry.trace_protocol import trace_protocol
@@ -50,7 +52,7 @@ class Attachment(BaseModel):
         content: The content of the attachment, either interleaved or a URL
         mime_type: The MIME type of the attachment content
     """
-    content: InterleavedContent | URL
+    content: Any  # Union[InterleavedContent, URL]
     mime_type: str
 
 
@@ -64,7 +66,7 @@ class Document(BaseModel):
         content: The content of the document, either interleaved or a URL
         mime_type: The MIME type of the document content
     """
-    content: InterleavedContent | URL
+    content: Any  # Union[InterleavedContent, URL]
     mime_type: str
 
 
@@ -116,7 +118,7 @@ class InferenceStep(StepCommon):
     """
     model_config = ConfigDict(protected_namespaces=())
 
-    step_type: Literal[StepType.inference.value] = StepType.inference.value
+    step_type: Literal["inference"] = StepType.inference.value
     model_response: CompletionMessage
 
 
@@ -132,7 +134,7 @@ class ToolExecutionStep(StepCommon):
         tool_calls: List of tool calls made by the agent
         tool_responses: List of responses from the executed tools
     """
-    step_type: Literal[StepType.tool_execution.value] = StepType.tool_execution.value
+    step_type: Literal["tool_execution"] = StepType.tool_execution.value
     tool_calls: List[ToolCall]
     tool_responses: List[ToolResponse]
 
@@ -148,7 +150,7 @@ class ShieldCallStep(StepCommon):
         step_type: The type of step, always "shield_call" for this class
         violation: Optional safety violation detected by the shield, None if no violation
     """
-    step_type: Literal[StepType.shield_call.value] = StepType.shield_call.value
+    step_type: Literal["shield_call"] = StepType.shield_call.value
     violation: Optional[SafetyViolation]
 
 
@@ -164,9 +166,9 @@ class MemoryRetrievalStep(StepCommon):
         vector_db_ids: Identifier for the vector database used
         inserted_context: The retrieved context information
     """
-    step_type: Literal[StepType.memory_retrieval.value] = StepType.memory_retrieval.value
+    step_type: Literal["memory_retrieval"] = StepType.memory_retrieval.value
     vector_db_ids: str
-    inserted_context: InterleavedContent
+    inserted_context: Any  # InterleavedContent
 
 
 Step = Annotated[
@@ -279,7 +281,7 @@ class AgentConfigCommon(BaseModel):
 
     input_shields: Optional[List[str]] = Field(default_factory=list)
     output_shields: Optional[List[str]] = Field(default_factory=list)
-    toolgroups: Optional[List[AgentToolGroup]] = Field(default_factory=list)
+    toolgroups: Optional[List[Any]] = Field(default_factory=list)  # List[AgentToolGroup]
     client_tools: Optional[List[ToolDef]] = Field(default_factory=list)
     tool_choice: Optional[ToolChoice] = Field(default=None, deprecated="use tool_config instead")
     tool_prompt_format: Optional[ToolPromptFormat] = Field(default=None, deprecated="use tool_config instead")
@@ -329,7 +331,7 @@ class AgentConfig(AgentConfigCommon):
     model: str
     instructions: str
     enable_session_persistence: Optional[bool] = False
-    response_format: Optional[ResponseFormat] = None
+    response_format: Optional[Any] = None  # ResponseFormat
 
 
 class AgentConfigOverridablePerTurn(AgentConfigCommon):
@@ -379,7 +381,7 @@ class AgentTurnResponseStepStartPayload(BaseModel):
         step_id: Unique identifier for the step
         metadata: Optional metadata associated with the step
     """
-    event_type: Literal[AgentTurnResponseEventType.step_start.value] = AgentTurnResponseEventType.step_start.value
+    event_type: Literal["step_start"] = AgentTurnResponseEventType.step_start.value
     step_type: StepType
     step_id: str
     metadata: Optional[Dict[str, Any]] = Field(default_factory=dict)
@@ -397,7 +399,7 @@ class AgentTurnResponseStepCompletePayload(BaseModel):
         step_id: Unique identifier for the step
         step_details: Detailed information about the completed step
     """
-    event_type: Literal[AgentTurnResponseEventType.step_complete.value] = AgentTurnResponseEventType.step_complete.value
+    event_type: Literal["step_complete"] = AgentTurnResponseEventType.step_complete.value
     step_type: StepType
     step_id: str
     step_details: Step
@@ -418,11 +420,11 @@ class AgentTurnResponseStepProgressPayload(BaseModel):
     """
     model_config = ConfigDict(protected_namespaces=())
 
-    event_type: Literal[AgentTurnResponseEventType.step_progress.value] = AgentTurnResponseEventType.step_progress.value
+    event_type: Literal["step_progress"] = AgentTurnResponseEventType.step_progress.value
     step_type: StepType
     step_id: str
 
-    delta: ContentDelta
+    delta: Any  # ContentDelta
 
 
 @json_schema_type
@@ -435,7 +437,7 @@ class AgentTurnResponseTurnStartPayload(BaseModel):
         event_type: The type of event, always "turn_start" for this class
         turn_id: Unique identifier for the turn
     """
-    event_type: Literal[AgentTurnResponseEventType.turn_start.value] = AgentTurnResponseEventType.turn_start.value
+    event_type: Literal["turn_start"] = AgentTurnResponseEventType.turn_start.value
     turn_id: str
 
 
@@ -449,7 +451,7 @@ class AgentTurnResponseTurnCompletePayload(BaseModel):
         event_type: The type of event, always "turn_complete" for this class
         turn: The completed turn object with all details
     """
-    event_type: Literal[AgentTurnResponseEventType.turn_complete.value] = AgentTurnResponseEventType.turn_complete.value
+    event_type: Literal["turn_complete"] = AgentTurnResponseEventType.turn_complete.value
     turn: Turn
 
 
@@ -464,7 +466,7 @@ class AgentTurnResponseTurnAwaitingInputPayload(BaseModel):
         event_type: The type of event, always "turn_awaiting_input" for this class
         turn: The turn object that is awaiting input
     """
-    event_type: Literal[AgentTurnResponseEventType.turn_awaiting_input.value] = (
+    event_type: Literal["turn_awaiting_input"] = (
         AgentTurnResponseEventType.turn_awaiting_input.value
     )
     turn: Turn
@@ -496,7 +498,7 @@ class AgentTurnResponseEvent(BaseModel):
     Attributes:
         payload: The payload containing the specific event details
     """
-    payload: AgentTurnResponseEventPayload
+    payload: Any  # AgentTurnResponseEventPayload
 
 
 @json_schema_type
@@ -553,8 +555,8 @@ class AgentTurnCreateRequest(AgentConfigOverridablePerTurn):
         ]
     ]
 
-    documents: Optional[List[Document]] = None
-    toolgroups: Optional[List[AgentToolGroup]] = None
+    documents: Optional[List[Any]] = None  # List[Document]
+    toolgroups: Optional[List[Any]] = None  # List[AgentToolGroup]
 
     stream: Optional[bool] = False
     tool_config: Optional[ToolConfig] = None
@@ -657,8 +659,8 @@ class Agents(Protocol):
             ]
         ],
         stream: Optional[bool] = False,
-        documents: Optional[List[Document]] = None,
-        toolgroups: Optional[List[AgentToolGroup]] = None,
+        documents: Optional[List["Document"]] = None,
+        toolgroups: Optional[List["AgentToolGroup"]] = None,
         tool_config: Optional[ToolConfig] = None,
         allow_turn_resume: Optional[bool] = False,
     ) -> Union[Turn, AsyncIterator[AgentTurnResponseStreamChunk]]:
