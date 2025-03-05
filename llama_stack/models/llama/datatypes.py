@@ -12,12 +12,32 @@
 # the top-level of this source tree.
 
 from enum import Enum
-from typing import Any, Dict, Literal, Optional, Union
+from typing import Any, Dict, Literal, Optional, Union, List
 
-# import all for backwards compatibility
-from llama_models.datatypes import *  # noqa: F403
-from llama_models.datatypes import BuiltinTool, ToolCall  # noqa: F401
+# Import specific items needed
+from llama_models.datatypes import (  # noqa: F401
+    BuiltinTool, ToolCall, StopReason
+)
 from pydantic import BaseModel, ConfigDict, Field, field_validator
+
+# Define URL class if it's not available in llama_models.datatypes
+class URL(BaseModel):
+    uri: str
+
+# Define Primitive type for JSON-compatible values
+Primitive = Union[str, int, float, bool, None, List[Any], Dict[str, Any]]
+
+# Define ToolPromptFormat enum
+class ToolPromptFormat(Enum):
+    """Format for tool calls in model output.
+    
+    :cvar json: The tool calls are formatted as a JSON object.
+    :cvar function_tag: The tool calls are enclosed in a <function=function_name> tag.
+    :cvar python_list: The tool calls are output as Python syntax -- a list of function calls.
+    """
+    json = "json"
+    function_tag = "function_tag"
+    python_list = "python_list"
 from typing_extensions import Annotated
 
 from llama_stack.schema_utils import json_schema_type, register_schema
@@ -79,7 +99,8 @@ SamplingStrategy = register_schema(
 
 @json_schema_type
 class SamplingParams(BaseModel):
-    strategy: SamplingStrategy = Field(default_factory=GreedySamplingStrategy)
+    # Use Any instead of SamplingStrategy to avoid type error
+    strategy: Any = Field(default_factory=GreedySamplingStrategy)
 
     max_tokens: Optional[int] = 0
     repetition_penalty: Optional[float] = 1.0

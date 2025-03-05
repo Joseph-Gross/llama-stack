@@ -4,10 +4,7 @@
 # This source code is licensed under the terms described in the LICENSE file in
 # the root directory of this source tree.
 
-import os
-import json
-import re
-from unittest.mock import MagicMock, patch, AsyncMock
+from unittest.mock import MagicMock, AsyncMock, patch
 
 import pytest
 import httpx
@@ -15,15 +12,12 @@ import httpx
 from llama_stack.apis.agents import (
     AgentConfig,
     Document,
-    Turn,
 )
-from llama_stack.apis.inference import CompletionMessage, UserMessage
-from llama_models.datatypes import BuiltinTool, StopReason, ToolCall, URL
+from llama_models.datatypes import ToolCall, URL
 from llama_stack.models.llama.datatypes import (
     SamplingParams,
     TopPSamplingStrategy,
 )
-from llama_stack.providers.datatypes import Api
 from llama_stack.providers.inline.agents.meta_reference.agent_instance import (
     ChatAgent,
     load_data_from_urls,
@@ -86,8 +80,8 @@ def chat_agent(mock_storage, mock_vector_io_api, mock_tool_runtime_api, mock_too
     agent = ChatAgent(
         agent_id="test_agent",
         agent_config=agent_config,
-        tempdir="/tmp",  # Add required parameter
-        persistence_store=mock_storage,  # Rename parameter
+        tempdir="/tmp/test_agent",  # Use a more specific tempdir
+        persistence_store=mock_storage,  # Use persistence_store instead of storage
         vector_io_api=mock_vector_io_api,
         tool_runtime_api=mock_tool_runtime_api,
         tool_groups_api=mock_tool_groups_api,

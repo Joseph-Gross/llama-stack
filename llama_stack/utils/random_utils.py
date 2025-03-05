@@ -10,7 +10,7 @@ Utilities for random number generation with seed setting for reproducibility.
 
 import random
 import os
-from typing import Optional, Union, Any
+from typing import Optional
 
 import numpy as np
 
@@ -22,7 +22,8 @@ except ImportError:
     TORCH_AVAILABLE = False
 
 
-def set_random_seed(seed: Optional[int] = None, deterministic: bool = True) -> int:
+def set_random_seed(seed: Optional[int] = None, 
+                       deterministic: bool = True) -> int:
     """
     Set random seed for Python's random module, NumPy, and PyTorch (if available).
     

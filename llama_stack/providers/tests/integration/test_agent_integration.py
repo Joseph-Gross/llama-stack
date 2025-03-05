@@ -6,14 +6,13 @@
 
 import os
 import tempfile
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
 from llama_stack.apis.agents import (
     AgentConfig,
     Document,
-    Turn,
 )
 from llama_stack.apis.inference import CompletionMessage, UserMessage
 from llama_stack.models.llama.datatypes import (
@@ -114,7 +113,7 @@ def chat_agent(mock_storage, mock_vector_io_api, mock_tool_runtime_api, mock_too
         tool_runtime_api=mock_tool_runtime_api,
         tool_groups_api=mock_tool_groups_api,
         inference_api=mock_inference_api,
-        safety_api=None,
+        safety_api=AsyncMock(),  # Use AsyncMock instead of None
     )
     
     return agent
