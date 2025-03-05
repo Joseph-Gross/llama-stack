@@ -1,0 +1,25 @@
+[
+  {
+    "tool_name": "code_interpreter",
+    "content": "Hello, world!",
+    "metadata": {
+      "execution_time_ms": 15
+    }
+  },
+  {
+    "tool_name": "brave_search",
+    "content": "Search results for 'machine learning':\n1. Machine Learning - Wikipedia\n2. What is Machine Learning? | IBM\n3. Machine Learning Tutorial - GeeksforGeeks\n4. Machine Learning Crash Course | Google Developers\n5. Machine Learning | Coursera",
+    "metadata": {
+      "search_time_ms": 250,
+      "result_count": 5
+    }
+  },
+  {
+    "tool_name": "rag_tool",
+    "content": "Based on the retrieved information, machine learning is a field of artificial intelligence that uses statistical techniques to give computer systems the ability to \"learn\" from data, without being explicitly programmed.",
+    "metadata": {
+      "retrieval_time_ms": 120,
+      "document_count": 3
+    }
+  }
+]

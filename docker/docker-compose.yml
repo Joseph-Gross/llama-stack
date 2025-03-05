@@ -1,0 +1,34 @@
+version: '3'
+
+services:
+  llama-stack:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    volumes:
+      - ../:/app
+    environment:
+      - PYTHONPATH=/app
+    ports:
+      - "8000:8000"
+    command: uvicorn llama_stack.distribution.ui.app:app --host 0.0.0.0 --port 8000 --reload
+
+  tests:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    volumes:
+      - ../:/app
+    environment:
+      - PYTHONPATH=/app
+    command: pytest
+
+  lint:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    volumes:
+      - ../:/app
+    environment:
+      - PYTHONPATH=/app
+    command: bash -c "ruff check . && black --check ."

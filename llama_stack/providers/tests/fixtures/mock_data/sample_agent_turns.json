@@ -1,0 +1,76 @@
+[
+  {
+    "turn_id": "turn_1",
+    "session_id": "session_1",
+    "input_messages": [
+      {
+        "role": "user",
+        "content": "Hello, can you help me?"
+      }
+    ],
+    "output_message": {
+      "role": "assistant",
+      "content": "Hello! I'm an AI assistant and I'd be happy to help you. What can I assist you with today?"
+    },
+    "steps": [
+      {
+        "step_id": "step_1",
+        "step_type": "inference",
+        "model_response": {
+          "role": "assistant",
+          "content": "Hello! I'm an AI assistant and I'd be happy to help you. What can I assist you with today?"
+        }
+      }
+    ]
+  },
+  {
+    "turn_id": "turn_2",
+    "session_id": "session_1",
+    "input_messages": [
+      {
+        "role": "user",
+        "content": "What is machine learning?"
+      }
+    ],
+    "output_message": {
+      "role": "assistant",
+      "content": "Machine learning is a field of artificial intelligence that uses statistical techniques to give computer systems the ability to \"learn\" from data, without being explicitly programmed. It allows computers to improve their performance on a task through experience."
+    },
+    "steps": [
+      {
+        "step_id": "step_1",
+        "step_type": "inference",
+        "model_response": {
+          "role": "assistant",
+          "content": "I'll help you understand machine learning."
+        }
+      },
+      {
+        "step_id": "step_2",
+        "step_type": "tool_execution",
+        "tool_calls": [
+          {
+            "tool_name": "brave_search",
+            "arguments": {
+              "query": "machine learning definition"
+            }
+          }
+        ],
+        "tool_responses": [
+          {
+            "tool_name": "brave_search",
+            "content": "Search results for 'machine learning definition':\n1. Machine Learning - Wikipedia\n2. What is Machine Learning? | IBM\n3. Machine Learning Tutorial - GeeksforGeeks"
+          }
+        ]
+      },
+      {
+        "step_id": "step_3",
+        "step_type": "inference",
+        "model_response": {
+          "role": "assistant",
+          "content": "Machine learning is a field of artificial intelligence that uses statistical techniques to give computer systems the ability to \"learn\" from data, without being explicitly programmed. It allows computers to improve their performance on a task through experience."
+        }
+      }
+    ]
+  }
+]

@@ -1,0 +1,12 @@
+name: llama-stack
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.10
+  - pip>=23.0
+  - numpy>=2.2.0
+  - pandas>=2.2.0
+  - pip:
+    - -r requirements.txt
+    - -r requirements-dev.txt
