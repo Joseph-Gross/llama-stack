@@ -12,14 +12,14 @@ from typing import Any, Dict, List, Optional, Protocol, runtime_checkable
 
 from pydantic import BaseModel, Field
 
-from llama_stack.apis.inference import InterleavedContent
+# Import Any instead of InterleavedContent to avoid circular imports
 from llama_stack.apis.vector_dbs import VectorDB
 from llama_stack.providers.utils.telemetry.trace_protocol import trace_protocol
 from llama_stack.schema_utils import json_schema_type, webmethod
 
 
 class Chunk(BaseModel):
-    content: InterleavedContent
+    content: Any  # Use Any instead of InterleavedContent to avoid circular imports
     metadata: Dict[str, Any] = Field(default_factory=dict)
 
 
@@ -40,7 +40,7 @@ class VectorIO(Protocol):
 
     # this will just block now until chunks are inserted, but it should
     # probably return a Job instance which can be polled for completion
-    @webmethod(route="/vector-io/insert", method="POST")
+    # Protocol methods should not have decorators
     async def insert_chunks(
         self,
         vector_db_id: str,
@@ -48,10 +48,10 @@ class VectorIO(Protocol):
         ttl_seconds: Optional[int] = None,
     ) -> None: ...
 
-    @webmethod(route="/vector-io/query", method="POST")
+    # Protocol methods should not have decorators
     async def query_chunks(
         self,
         vector_db_id: str,
-        query: InterleavedContent,
+        query: Any,  # Use Any instead of InterleavedContent to avoid circular imports
         params: Optional[Dict[str, Any]] = None,
     ) -> QueryChunksResponse: ...

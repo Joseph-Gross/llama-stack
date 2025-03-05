@@ -12,11 +12,13 @@
 # the top-level of this source tree.
 
 from pathlib import Path
-from typing import List, Optional
+from typing import Any, Dict, List, Literal, Optional, Union
 
 from llama_models.datatypes import (
     BuiltinTool,
+    RawMediaItem,
     RawMessage,
+    RawTextItem,
     StopReason,
     ToolCall,
     ToolPromptFormat,
@@ -209,7 +211,7 @@ class LLama31Interface:
             )
         ]
 
-    def user_message(self, content: str) -> List[RawMessage]:
+    def user_message(self, content: Union[str, List[Union[RawMediaItem, RawTextItem]]]) -> List[RawMessage]:
         return [RawMessage(role="user", content=content)]
 
     def display_message_as_tokens(self, message: RawMessage) -> None:

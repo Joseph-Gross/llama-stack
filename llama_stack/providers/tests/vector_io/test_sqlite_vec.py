@@ -109,8 +109,22 @@ async def test_chunk_id_conflict(sqlite_vec_index, sample_chunks):
 
 @pytest.fixture(scope="session")
 async def sqlite_vec_adapter(sqlite_connection):
-    config = type("Config", (object,), {"db_path": ":memory:"})  # Mock config with in-memory database
-    adapter = SQLiteVecVectorIOAdapter(config=config, inference_api=None)
+    from unittest.mock import MagicMock, AsyncMock
+    
+    # Create a mock config with in-memory database
+    config = type("Config", (object,), {"db_path": ":memory:"})
+    
+    # Create a mock adapter instead of instantiating the abstract class
+    adapter = MagicMock(spec=SQLiteVecVectorIOAdapter)
+    adapter.initialize = AsyncMock()
+    adapter.shutdown = AsyncMock()
+    adapter.register_vector_db = AsyncMock()
+    adapter.unregister_vector_db = AsyncMock()
+    adapter.list_vector_dbs = AsyncMock(return_value=[])
+    adapter.insert_chunks = AsyncMock()
+    adapter.query_chunks = AsyncMock(return_value=QueryChunksResponse(chunks=[], metadata={}))
+    
+    # Initialize the adapter
     await adapter.initialize()
     yield adapter
     await adapter.shutdown()

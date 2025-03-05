@@ -12,7 +12,12 @@
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
+import os
+import sys
 from docutils import nodes
+
+# Add the repository root to the Python path so that autodoc can find the modules
+sys.path.insert(0, os.path.abspath('../..'))
 
 project = "llama-stack"
 copyright = "2025, Meta"
@@ -30,6 +35,9 @@ extensions = [
     "sphinxcontrib.redoc",
     "sphinxcontrib.mermaid",
     "sphinxcontrib.video",
+    "sphinx.ext.autodoc",
+    "sphinx.ext.napoleon",
+    "sphinx.ext.viewcode",
 ]
 myst_enable_extensions = ["colon_fence"]
 
