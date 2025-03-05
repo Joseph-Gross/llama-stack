@@ -4,12 +4,14 @@
 # This source code is licensed under the terms described in the LICENSE file in
 # the root directory of this source tree.
 
+from __future__ import annotations
+
 from enum import Enum
 from typing import Annotated, List, Literal, Optional, Union
 
 from pydantic import BaseModel, Field, model_validator
 
-from llama_stack.models.llama.datatypes import ToolCall
+from llama_models.datatypes import ToolCall
 from llama_stack.schema_utils import json_schema_type, register_schema
 
 

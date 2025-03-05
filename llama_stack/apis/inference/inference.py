@@ -4,6 +4,8 @@
 # This source code is licensed under the terms described in the LICENSE file in
 # the root directory of this source tree.
 
+from __future__ import annotations
+
 from enum import Enum
 from typing import (
     Any,
@@ -20,17 +22,21 @@ from typing import (
 from pydantic import BaseModel, Field, field_validator
 from typing_extensions import Annotated
 
-from llama_stack.apis.common.content_types import ContentDelta, InterleavedContent, InterleavedContentItem
+from llama_stack.apis.common.content_types import (
+    ContentDelta,
+    InterleavedContent,
+    InterleavedContentItem,
+)
 from llama_stack.apis.models import Model
 from llama_stack.apis.telemetry.telemetry import MetricResponseMixin
-from llama_stack.models.llama.datatypes import (
+from llama_models.datatypes import (
     BuiltinTool,
-    SamplingParams,
     StopReason,
     ToolCall,
-    ToolDefinition,
     ToolPromptFormat,
 )
+from llama_stack.models.llama.datatypes import SamplingParams
+from llama_stack.models.llama.datatypes import ToolDefinition
 from llama_stack.providers.utils.telemetry.trace_protocol import trace_protocol
 from llama_stack.schema_utils import json_schema_type, register_schema, webmethod
 
@@ -249,7 +255,9 @@ class JsonSchemaResponseFormat(BaseModel):
     :param json_schema: The JSON schema the response should conform to. In a Python SDK, this is often a `pydantic` model.
     """
 
-    type: Literal[ResponseFormatType.json_schema.value] = ResponseFormatType.json_schema.value
+    type: Literal[ResponseFormatType.json_schema.value] = (
+        ResponseFormatType.json_schema.value
+    )
     json_schema: Dict[str, Any]
 
 
@@ -342,7 +350,9 @@ class ToolConfig(BaseModel):
 
     tool_choice: Optional[ToolChoice | str] = Field(default=ToolChoice.auto)
     tool_prompt_format: Optional[ToolPromptFormat] = Field(default=None)
-    system_message_behavior: Optional[SystemMessageBehavior] = Field(default=SystemMessageBehavior.append)
+    system_message_behavior: Optional[SystemMessageBehavior] = Field(
+        default=SystemMessageBehavior.append
+    )
 
     def model_post_init(self, __context: Any) -> None:
         if isinstance(self.tool_choice, str):
@@ -475,7 +485,9 @@ class Inference(Protocol):
         stream: Optional[bool] = False,
         logprobs: Optional[LogProbConfig] = None,
         tool_config: Optional[ToolConfig] = None,
-    ) -> Union[ChatCompletionResponse, AsyncIterator[ChatCompletionResponseStreamChunk]]:
+    ) -> Union[
+        ChatCompletionResponse, AsyncIterator[ChatCompletionResponseStreamChunk]
+    ]:
         """Generate a chat completion for the given messages using the specified model.
 
         :param model_id: The identifier of the model to use. The model must be registered with Llama Stack and available via the /models endpoint.

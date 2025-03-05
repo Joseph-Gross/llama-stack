@@ -24,10 +24,9 @@ from typing import (
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from llama_stack.apis.common.content_types import URL, ContentDelta, InterleavedContent
+from llama_stack.apis.common.content_types import InterleavedContent
 from llama_stack.apis.inference import (
     CompletionMessage,
-    ResponseFormat,
     SamplingParams,
     ToolChoice,
     ToolConfig,
@@ -39,7 +38,7 @@ from llama_models.datatypes import ToolCall, ToolPromptFormat
 from llama_stack.apis.safety import SafetyViolation
 from llama_stack.apis.tools import ToolDef
 from llama_stack.providers.utils.telemetry.trace_protocol import trace_protocol
-from llama_stack.schema_utils import json_schema_type, register_schema, webmethod
+from llama_stack.schema_utils import json_schema_type, register_schema, webmethod  # type: ignore
 
 
 class Attachment(BaseModel):
@@ -659,8 +658,8 @@ class Agents(Protocol):
             ]
         ],
         stream: Optional[bool] = False,
-        documents: Optional[List["Document"]] = None,
-        toolgroups: Optional[List["AgentToolGroup"]] = None,
+        documents: Optional[List[Document]] = None,
+        toolgroups: Optional[List[Any]] = None,  # List[AgentToolGroup]
         tool_config: Optional[ToolConfig] = None,
         allow_turn_resume: Optional[bool] = False,
     ) -> Union[Turn, AsyncIterator[AgentTurnResponseStreamChunk]]:
