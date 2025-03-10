@@ -13,6 +13,7 @@ import logging
 import os
 import signal
 import sys
+import time
 import traceback
 import warnings
 from contextlib import asynccontextmanager
@@ -78,6 +79,7 @@ def create_sse_event(data: Any) -> str:
 
 
 async def global_exception_handler(request: Request, exc: Exception):
+    # Log the full exception for debugging but don't expose to client
     traceback.print_exception(exc)
     http_exc = translate_exception(exc)
 
@@ -86,34 +88,50 @@ async def global_exception_handler(request: Request, exc: Exception):
 
 def translate_exception(exc: Exception) -> Union[HTTPException, RequestValidationError]:
     if isinstance(exc, ValidationError):
-        exc = RequestValidationError(exc.raw_errors)
+        # Convert Pydantic validation errors to RequestValidationError
+        try:
+            exc = RequestValidationError(exc.errors())
+        except AttributeError:
+            # Fallback if raw_errors is not available
+            return HTTPException(status_code=400, detail="Validation error")
 
     if isinstance(exc, RequestValidationError):
-        return HTTPException(
-            status_code=400,
-            detail={
-                "errors": [
-                    {
-                        "loc": list(error["loc"]),
-                        "msg": error["msg"],
-                        "type": error["type"],
-                    }
-                    for error in exc.errors()
-                ]
-            },
-        )
+        # Sanitize validation errors to avoid leaking implementation details
+        try:
+            return HTTPException(
+                status_code=400,
+                detail={
+                    "errors": [
+                        {
+                            "loc": list(error["loc"]),
+                            "msg": error["msg"],
+                            "type": error["type"],
+                        }
+                        for error in exc.errors()
+                    ]
+                },
+            )
+        except (AttributeError, TypeError):
+            return HTTPException(status_code=400, detail="Invalid request format")
     elif isinstance(exc, ValueError):
-        return HTTPException(status_code=400, detail=f"Invalid value: {str(exc)}")
+        # Sanitize error message to avoid leaking sensitive information
+        error_message = str(exc)
+        if len(error_message) > 100:
+            error_message = error_message[:100] + "..."
+        return HTTPException(status_code=400, detail=f"Invalid value: {error_message}")
     elif isinstance(exc, PermissionError):
-        return HTTPException(status_code=403, detail=f"Permission denied: {str(exc)}")
+        return HTTPException(status_code=403, detail="Permission denied")
     elif isinstance(exc, TimeoutError):
-        return HTTPException(status_code=504, detail=f"Operation timed out: {str(exc)}")
+        return HTTPException(status_code=504, detail="Operation timed out")
     elif isinstance(exc, NotImplementedError):
-        return HTTPException(status_code=501, detail=f"Not implemented: {str(exc)}")
+        return HTTPException(status_code=501, detail="This functionality is not implemented")
+    elif isinstance(exc, InvalidProviderError):
+        return HTTPException(status_code=400, detail="Invalid provider configuration")
     else:
+        # Generic error without exposing implementation details
         return HTTPException(
             status_code=500,
-            detail="Internal server error: An unexpected error occurred.",
+            detail="Internal server error",
         )
 
 
