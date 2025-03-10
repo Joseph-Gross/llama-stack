@@ -331,6 +331,11 @@ def main():
     )
     parser.add_argument("--disable-ipv6", action="store_true", help="Whether to disable IPv6 support")
     parser.add_argument(
+        "--host",
+        default=os.getenv("LLAMA_STACK_HOST", "localhost"),
+        help="Host interface to bind to (default: localhost, use 0.0.0.0 for all interfaces)",
+    )
+    parser.add_argument(
         "--env",
         action="append",
         help="Environment variables in KEY=value format. Can be specified multiple times.",
@@ -464,7 +469,7 @@ def main():
         }
         print(f"HTTPS enabled with certificates:\n  Key: {keyfile}\n  Cert: {certfile}")
 
-    listen_host = ["::", "0.0.0.0"] if not args.disable_ipv6 else "0.0.0.0"
+    listen_host = ["::", args.host] if not args.disable_ipv6 else args.host
     print(f"Listening on {listen_host}:{port}")
 
     uvicorn_config = {
