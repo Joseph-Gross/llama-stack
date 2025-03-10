@@ -209,7 +209,7 @@ def _run_with_pty_win(command):
 
         process = subprocess.Popen(
             command,
-            shell=True,
+            shell=False,
             universal_newlines=True,
         )
 

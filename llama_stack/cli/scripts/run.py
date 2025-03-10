@@ -13,6 +13,6 @@ def install_wheel_from_presigned():
     file = "install-wheel-from-presigned.sh"
     script_path = os.path.join(os.path.dirname(__file__), file)
     try:
-        subprocess.run(["sh", script_path] + sys.argv[1:], check=True)
+        subprocess.run(["sh", script_path] + sys.argv[1:], check=True, shell=False)
     except Exception:
         sys.exit(1)
