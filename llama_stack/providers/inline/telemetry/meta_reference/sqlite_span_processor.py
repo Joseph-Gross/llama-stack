@@ -104,7 +104,21 @@ class SQLiteSpanProcessor(SpanProcessor):
             if parent_context:
                 parent_span_id = format(parent_context.span_id, "016x")
 
-            # Insert into traces
+            # Validate inputs to prevent SQL injection
+            if not all(c.isalnum() or c in "-_" for c in trace_id):
+                raise ValueError(f"Invalid trace_id format: {trace_id}")
+            if not all(c.isalnum() or c in "-_" for c in span_id):
+                raise ValueError(f"Invalid span_id format: {span_id}")
+            if parent_span_id and not all(c.isalnum() or c in "-_" for c in parent_span_id):
+                raise ValueError(f"Invalid parent_span_id format: {parent_span_id}")
+
+            # Sanitize service_name
+            service_name = service_name[:100]  # Limit length
+            
+            # Sanitize span name
+            span_name = span.name[:100] if span.name else "unnamed"
+
+            # Insert into traces using parameterized queries to prevent SQL injection
             cursor.execute(
                 """
                 INSERT INTO traces (
@@ -124,7 +138,7 @@ class SQLiteSpanProcessor(SpanProcessor):
                 ),
             )
 
-            # Insert into spans
+            # Insert into spans using parameterized queries
             cursor.execute(
                 """
                 INSERT INTO spans (
@@ -137,16 +151,18 @@ class SQLiteSpanProcessor(SpanProcessor):
                     span_id,
                     trace_id,
                     parent_span_id,
-                    span.name,
+                    span_name,
                     datetime.fromtimestamp(span.start_time / 1e9).isoformat(),
                     datetime.fromtimestamp(span.end_time / 1e9).isoformat(),
                     json.dumps(dict(span.attributes)),
-                    span.status.status_code.name,
-                    span.kind.name,
+                    span.status.status_code.name if span.status else "UNSET",
+                    span.kind.name if span.kind else "INTERNAL",
                 ),
             )
 
+            # Process events with validation
             for event in span.events:
+                event_name = event.name[:100] if event.name else "unnamed_event"
                 cursor.execute(
                     """
                     INSERT INTO span_events (
@@ -155,7 +171,7 @@ class SQLiteSpanProcessor(SpanProcessor):
                 """,
                     (
                         span_id,
-                        event.name,
+                        event_name,
                         datetime.fromtimestamp(event.timestamp / 1e9).isoformat(),
                         json.dumps(dict(event.attributes)),
                     ),
@@ -164,7 +180,8 @@ class SQLiteSpanProcessor(SpanProcessor):
             conn.commit()
             cursor.close()
         except Exception as e:
-            print(f"Error exporting span to SQLite: {e}")
+            import logging
+            logging.error(f"Error exporting span to SQLite: {e}", exc_info=True)
 
     def shutdown(self):
         """Cleanup any resources."""
