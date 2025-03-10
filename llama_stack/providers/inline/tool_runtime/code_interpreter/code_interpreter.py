@@ -6,6 +6,8 @@
 
 
 import logging
+import os
+import shutil
 import tempfile
 from typing import Any, Dict, List, Optional
 
@@ -28,10 +30,27 @@ log = logging.getLogger(__name__)
 class CodeInterpreterToolRuntimeImpl(ToolsProtocolPrivate, ToolRuntime):
     def __init__(self, config: CodeInterpreterToolConfig):
         self.config = config
+        
+        # Create a secure temporary directory with restricted permissions
+        temp_dir = tempfile.mkdtemp()
+        os.chmod(temp_dir, 0o700)  # Restrict permissions to owner only
+        
         ctx = CodeExecutionContext(
-            matplotlib_dump_dir=tempfile.mkdtemp(),
+            matplotlib_dump_dir=temp_dir,
         )
         self.code_executor = CodeExecutor(ctx)
+        
+        # Track temporary directories for cleanup
+        self._temp_dirs = [temp_dir]
+        
+    def __del__(self):
+        """Clean up temporary directories when the object is garbage collected."""
+        for temp_dir in self._temp_dirs:
+            try:
+                if os.path.exists(temp_dir):
+                    shutil.rmtree(temp_dir)
+            except Exception as e:
+                logging.error(f"Failed to clean up temporary directory {temp_dir}: {e}")
 
     async def initialize(self):
         pass
