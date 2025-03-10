@@ -259,6 +259,42 @@ def create_dynamic_typed_route(func: Any, method: str, route: str):
     return endpoint
 
 
+class CORSMiddleware:
+    def __init__(self, app):
+        self.app = app
+
+    async def __call__(self, scope, receive, send):
+        if scope["type"] == "http":
+            headers = [
+                (b"access-control-allow-origin", b"*"),
+                (b"access-control-allow-methods", b"GET, POST, OPTIONS"),
+                (b"access-control-allow-headers", b"content-type, x-llamastack-provider-data, x-llamastack-client-version"),
+                (b"access-control-max-age", b"86400"),
+            ]
+
+            if scope["method"] == "OPTIONS":
+                return await self._options_response(send, headers)
+            
+            async def send_with_cors(message):
+                if message["type"] == "http.response.start":
+                    message.setdefault("headers", []).extend(headers)
+                await send(message)
+                
+            return await self.app(scope, receive, send_with_cors)
+        return await self.app(scope, receive, send)
+        
+    async def _options_response(self, send, headers):
+        await send({
+            "type": "http.response.start",
+            "status": 200,
+            "headers": headers,
+        })
+        await send({
+            "type": "http.response.body",
+            "body": b"",
+        })
+
+
 class TracingMiddleware:
     def __init__(self, app):
         self.app = app
