@@ -69,12 +69,13 @@ class ErrorHandlingMiddleware(BaseHTTPMiddleware):
         if isinstance(exc, LlamaStackException):
             # Handle known Llama Stack exceptions
             status_code = self._get_status_code_for_exception(exc)
-            # Access attributes that are specific to LlamaStackException
+            # Cast to LlamaStackException to access its specific attributes
+            llama_exc = exc  # type: LlamaStackException
             error_response = {
                 "error": {
-                    "code": exc.error_code,
-                    "message": exc.message,
-                    "details": exc.details
+                    "code": llama_exc.error_code,
+                    "message": llama_exc.message,
+                    "details": llama_exc.details
                 }
             }
             
@@ -150,7 +151,7 @@ class ErrorHandlingMiddleware(BaseHTTPMiddleware):
         log_level = log_level_map.get(exc.severity, logging.ERROR)
         
         # Merge exception details with context
-        log_context = {**context, **exc.details}
+        log_context = {**context, **(exc.details or {})}
         
         logger.log(
             log_level,
