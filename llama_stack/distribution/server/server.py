@@ -510,6 +510,9 @@ def main():
     print(yaml.dump(safe_config, indent=2))
 
     app = FastAPI(lifespan=lifespan)
+    app.add_middleware(SecurityHeadersMiddleware)
+    app.add_middleware(CORSMiddleware)
+    app.add_middleware(RateLimitMiddleware)
     app.add_middleware(TracingMiddleware)
     if not os.environ.get("LLAMA_STACK_DISABLE_VERSION_CHECK"):
         app.add_middleware(ClientVersionMiddleware)
