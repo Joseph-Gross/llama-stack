@@ -117,22 +117,37 @@ class EnvVarError(Exception):
 
 def redact_sensitive_fields(data: Dict[str, Any]) -> Dict[str, Any]:
     """Redact sensitive information from config before printing."""
-    sensitive_patterns = ["api_key", "api_token", "password", "secret"]
-
-    def _redact_dict(d: Dict[str, Any]) -> Dict[str, Any]:
-        result = {}
-        for k, v in d.items():
-            if isinstance(v, dict):
-                result[k] = _redact_dict(v)
-            elif isinstance(v, list):
-                result[k] = [_redact_dict(i) if isinstance(i, dict) else i for i in v]
-            elif any(pattern in k.lower() for pattern in sensitive_patterns):
-                result[k] = "********"
-            else:
-                result[k] = v
-        return result
-
-    return _redact_dict(data)
+    import copy
+    
+    # Create a deep copy to avoid modifying the original data
+    result = copy.deepcopy(data)
+    
+    # Comprehensive list of sensitive field patterns
+    sensitive_patterns = [
+        "password", "secret", "key", "token", "credential", "auth", 
+        "cert", "private", "signature", "api_key", "api_token", 
+        "access_token", "client_secret", "oauth", "jwt", "ssh_key",
+        "encryption", "passphrase", "salt", "hash", "security"
+    ]
+    
+    def redact_recursive(obj):
+        """Recursively redact sensitive information in nested structures."""
+        if isinstance(obj, dict):
+            for k, v in obj.items():
+                if isinstance(v, (dict, list)):
+                    redact_recursive(v)
+                elif isinstance(v, str) and any(pattern in k.lower() for pattern in sensitive_patterns):
+                    obj[k] = "********"
+                # Also check for sensitive values in environment variables
+                elif isinstance(v, str) and v.startswith("${env.") and any(pattern in v.lower() for pattern in sensitive_patterns):
+                    obj[k] = "********"
+        elif isinstance(obj, list):
+            for item in obj:
+                if isinstance(item, (dict, list)):
+                    redact_recursive(item)
+    
+    redact_recursive(result)
+    return result
 
 
 def replace_env_vars(config: Any, path: str = "") -> Any:
