@@ -375,6 +375,32 @@ class RateLimitMiddleware:
         })
 
 
+class SecurityHeadersMiddleware:
+    def __init__(self, app):
+        self.app = app
+        
+    async def __call__(self, scope, receive, send):
+        if scope["type"] == "http":
+            async def send_with_security_headers(message):
+                if message["type"] == "http.response.start":
+                    headers = message.get("headers", [])
+                    security_headers = [
+                        (b"x-content-type-options", b"nosniff"),
+                        (b"x-frame-options", b"DENY"),
+                        (b"content-security-policy", b"default-src 'self'; script-src 'self'; object-src 'none'"),
+                        (b"strict-transport-security", b"max-age=31536000; includeSubDomains"),
+                        (b"x-xss-protection", b"1; mode=block"),
+                        (b"referrer-policy", b"no-referrer"),
+                        (b"cache-control", b"no-store"),
+                        (b"pragma", b"no-cache"),
+                    ]
+                    message["headers"] = headers + security_headers
+                await send(message)
+                
+            return await self.app(scope, receive, send_with_security_headers)
+        return await self.app(scope, receive, send)
+
+
 class ClientVersionMiddleware:
     def __init__(self, app):
         self.app = app
