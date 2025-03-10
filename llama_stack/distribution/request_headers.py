@@ -43,6 +43,7 @@ def set_request_provider_data(headers: Dict[str, str]):
         "X-LlamaStack-Provider-Data",
         "x-llamastack-provider-data",
     ]
+    val = None
     for key in keys:
         val = headers.get(key, None)
         if val:
@@ -51,10 +52,37 @@ def set_request_provider_data(headers: Dict[str, str]):
     if not val:
         return
 
+    # Validate input before processing
+    if not isinstance(val, str):
+        log.error("Provider data is not a string")
+        return
+        
+    # Limit size to prevent DoS attacks
+    if len(val) > 10000:  
+        log.error(f"Provider data too large: {len(val)} bytes (max 10000)")
+        return
+        
     try:
-        val = json.loads(val)
-    except json.JSONDecodeError:
-        log.error("Provider data not encoded as a JSON object!", val)
+        parsed_val = json.loads(val)
+        
+        # Validate JSON structure
+        if not isinstance(parsed_val, dict):
+            log.error("Provider data not encoded as a JSON object")
+            return
+            
+        # Check for suspicious patterns
+        for k, v in parsed_val.items():
+            if not isinstance(k, str):
+                log.error(f"Invalid key type in provider data: {type(k)}")
+                return
+                
+            # Prevent potential prototype pollution
+            if k.startswith('__') or k in ['constructor', 'prototype']:
+                log.error(f"Potentially unsafe key in provider data: {k}")
+                return
+                
+    except json.JSONDecodeError as e:
+        log.error(f"Provider data not encoded as a JSON object: {str(e)}")
         return
 
-    _THREAD_LOCAL.provider_data_header_value = val
+    _THREAD_LOCAL.provider_data_header_value = parsed_val

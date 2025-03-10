@@ -103,17 +103,19 @@ def translate_exception(exc: Exception) -> Union[HTTPException, RequestValidatio
             },
         )
     elif isinstance(exc, ValueError):
-        return HTTPException(status_code=400, detail=f"Invalid value: {str(exc)}")
+        return HTTPException(status_code=400, detail="Invalid request value")
     elif isinstance(exc, PermissionError):
-        return HTTPException(status_code=403, detail=f"Permission denied: {str(exc)}")
+        return HTTPException(status_code=403, detail="Permission denied")
     elif isinstance(exc, TimeoutError):
-        return HTTPException(status_code=504, detail=f"Operation timed out: {str(exc)}")
+        return HTTPException(status_code=504, detail="Operation timed out")
     elif isinstance(exc, NotImplementedError):
-        return HTTPException(status_code=501, detail=f"Not implemented: {str(exc)}")
+        return HTTPException(status_code=501, detail="Functionality not implemented")
     else:
+        # Log the full error internally but return a generic message to the client
+        logger.error(f"Internal server error: {str(exc)}", exc_info=True)
         return HTTPException(
             status_code=500,
-            detail="Internal server error: An unexpected error occurred.",
+            detail="Internal server error",
         )
 
 
@@ -381,6 +383,17 @@ def main():
     print(yaml.dump(safe_config, indent=2))
 
     app = FastAPI(lifespan=lifespan)
+    
+    # Add CORS middleware with secure defaults
+    from fastapi.middleware.cors import CORSMiddleware
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=[],  # Set this to specific origins in production
+        allow_credentials=False,
+        allow_methods=["GET", "POST"],
+        allow_headers=["*"],
+    )
+    
     app.add_middleware(TracingMiddleware)
     if not os.environ.get("LLAMA_STACK_DISABLE_VERSION_CHECK"):
         app.add_middleware(ClientVersionMiddleware)

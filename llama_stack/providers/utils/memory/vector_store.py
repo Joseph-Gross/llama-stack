@@ -5,12 +5,13 @@
 # the root directory of this source tree.
 import base64
 import io
+import ipaddress
 import logging
 import re
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional
-from urllib.parse import unquote
+from urllib.parse import unquote, urlparse
 
 import chardet
 import httpx
@@ -33,6 +34,43 @@ from llama_stack.providers.utils.inference.prompt_adapter import (
 )
 
 log = logging.getLogger(__name__)
+
+
+def _is_safe_url(url: str) -> bool:
+    """Validate URL for safety.
+    
+    Checks:
+    1. URL scheme is allowed (http, https, data, file)
+    2. No localhost or internal IP addresses for remote URLs
+    3. Basic format validation
+    """
+    if url.startswith("data:"):
+        # Data URLs are handled separately with content validation
+        return True
+        
+    allowed_schemes = ["http://", "https://", "file://"]
+    if not any(url.startswith(scheme) for scheme in allowed_schemes):
+        return False
+        
+    # Block localhost and private IPs for remote URLs
+    if url.startswith(("http://", "https://")):
+        parsed_url = urlparse(url)
+        hostname = parsed_url.netloc.split(":", 1)[0]
+        
+        if hostname in ["localhost", "127.0.0.1", "::1"]:
+            return False
+            
+        # Check for private IP ranges
+        try:
+            if hostname.replace(".", "").isdigit():  # IPv4 check
+                ip = ipaddress.ip_address(hostname)
+                if ip.is_private or ip.is_loopback or ip.is_reserved:
+                    return False
+        except ValueError:
+            # Not a valid IP address, continue with hostname checks
+            pass
+            
+    return True
 
 
 def parse_pdf(data: bytes) -> str:
@@ -113,12 +151,23 @@ def concat_interleaved_content(content: List[InterleavedContent]) -> Interleaved
 
 
 async def content_from_doc(doc: RAGDocument) -> str:
+    # Validate URL before processing
     if isinstance(doc.content, URL):
-        if doc.content.uri.startswith("data:"):
-            return content_from_data(doc.content.uri)
+        url = doc.content.uri
+        # Validate URL format and scheme
+        if not _is_safe_url(url):
+            raise ValueError(f"Unsafe URL provided: {url}")
+            
+        if url.startswith("data:"):
+            return content_from_data(url)
         else:
             async with httpx.AsyncClient() as client:
-                r = await client.get(doc.content.uri)
+                try:
+                    r = await client.get(url, timeout=10.0, follow_redirects=True)
+                    r.raise_for_status()  # Raise exception for 4XX/5XX responses
+                except httpx.HTTPError as e:
+                    log.error(f"Error fetching URL {url}: {str(e)}")
+                    raise ValueError(f"Error fetching URL: {str(e)}")
             if doc.mime_type == "application/pdf":
                 return parse_pdf(r.content)
             else:
@@ -126,11 +175,21 @@ async def content_from_doc(doc: RAGDocument) -> str:
 
     pattern = re.compile("^(https?://|file://|data:)")
     if pattern.match(doc.content):
-        if doc.content.startswith("data:"):
-            return content_from_data(doc.content)
+        url = doc.content
+        # Validate URL format and scheme
+        if not _is_safe_url(url):
+            raise ValueError(f"Unsafe URL provided: {url}")
+            
+        if url.startswith("data:"):
+            return content_from_data(url)
         else:
             async with httpx.AsyncClient() as client:
-                r = await client.get(doc.content)
+                try:
+                    r = await client.get(url, timeout=10.0, follow_redirects=True)
+                    r.raise_for_status()  # Raise exception for 4XX/5XX responses
+                except httpx.HTTPError as e:
+                    log.error(f"Error fetching URL {url}: {str(e)}")
+                    raise ValueError(f"Error fetching URL: {str(e)}")
             if doc.mime_type == "application/pdf":
                 return parse_pdf(r.content)
             else:

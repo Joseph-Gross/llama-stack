@@ -15,4 +15,4 @@ class PGVectorVectorIOConfig(BaseModel):
     port: int = Field(default=5432)
     db: str = Field(default="postgres")
     user: str = Field(default="postgres")
-    password: str = Field(default="mysecretpassword")
+    password: str = Field(default=None, description="Database password. Should be provided via environment variable.")
