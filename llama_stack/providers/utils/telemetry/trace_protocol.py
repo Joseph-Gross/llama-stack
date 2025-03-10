@@ -7,11 +7,12 @@
 import asyncio
 import inspect
 from functools import wraps
-from typing import Any, AsyncGenerator, Callable, Type, TypeVar
+from typing import Any, AsyncGenerator, Callable, Dict, Optional, Type, TypeVar, Union
 
 from pydantic import BaseModel
 
-from llama_stack.models.llama.datatypes import Primitive
+# Define Primitive type explicitly
+Primitive = Union[str, int, float, bool, None]
 
 T = TypeVar("T")
 
@@ -19,7 +20,7 @@ T = TypeVar("T")
 def serialize_value(value: Any) -> Primitive:
     """Serialize a single value into JSON-compatible format."""
     if value is None:
-        return ""
+        return None
     elif isinstance(value, (str, int, float, bool)):
         return value
     elif hasattr(value, "_name_"):
@@ -34,6 +35,12 @@ def trace_protocol(cls: Type[T]) -> Type[T]:
     """
     A class decorator that automatically traces all methods in a protocol/base class
     and its inheriting classes.
+    
+    Args:
+        cls: The class to trace methods for
+        
+    Returns:
+        The decorated class with traced methods
     """
 
     def trace_method(method: Callable) -> Callable:
@@ -46,14 +53,14 @@ def trace_protocol(cls: Type[T]) -> Type[T]:
             span_type = "async_generator" if is_async_gen else "async" if is_async else "sync"
             sig = inspect.signature(method)
             param_names = list(sig.parameters.keys())[1:]  # Skip 'self'
-            combined_args = {}
+            combined_args: Dict[str, Any] = {}
             for i, arg in enumerate(args):
                 param_name = param_names[i] if i < len(param_names) else f"position_{i + 1}"
                 combined_args[param_name] = serialize_value(arg)
             for k, v in kwargs.items():
                 combined_args[str(k)] = serialize_value(v)
 
-            span_attributes = {
+            span_attributes: Dict[str, Any] = {
                 "__autotraced__": True,
                 "__class__": class_name,
                 "__method__": method_name,
@@ -104,7 +111,8 @@ def trace_protocol(cls: Type[T]) -> Type[T]:
                     result = method(self, *args, **kwargs)
                     span.set_attribute("output", serialize_value(result))
                     return result
-                except Exception as _e:
+                except Exception as e:
+                    span.set_attribute("error", str(e))
                     raise
 
         if is_async_gen:
@@ -124,6 +132,6 @@ def trace_protocol(cls: Type[T]) -> Type[T]:
             if inspect.isfunction(method) and not name.startswith("_"):
                 setattr(cls_child, name, trace_method(method))  # noqa: B010
 
-    cls.__init_subclass__ = classmethod(__init_subclass__)
+    setattr(cls, "__init_subclass__", classmethod(__init_subclass__))
 
     return cls
