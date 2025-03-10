@@ -20,7 +20,7 @@ from typing import (
 from pydantic import BaseModel, Field
 from typing_extensions import Annotated
 
-from llama_stack.models.llama.datatypes import Primitive
+from typing import Any, Dict, List, Literal, Optional, Protocol, Union, runtime_checkable
 from llama_stack.schema_utils import json_schema_type, register_schema, webmethod
 
 # Add this constant near the top of the file, after the imports
@@ -78,19 +78,19 @@ class EventCommon(BaseModel):
     trace_id: str
     span_id: str
     timestamp: datetime
-    attributes: Optional[Dict[str, Primitive]] = Field(default_factory=dict)
+    attributes: Optional[Dict[str, Union[str, int, float, bool, None]]] = Field(default_factory=dict)
 
 
 @json_schema_type
 class UnstructuredLogEvent(EventCommon):
-    type: Literal[EventType.UNSTRUCTURED_LOG.value] = EventType.UNSTRUCTURED_LOG.value
+    type: str = EventType.UNSTRUCTURED_LOG.value
     message: str
     severity: LogSeverity
 
 
 @json_schema_type
 class MetricEvent(EventCommon):
-    type: Literal[EventType.METRIC.value] = EventType.METRIC.value
+    type: str = EventType.METRIC.value
     metric: str  # this would be an enum
     value: Union[int, float]
     unit: str
@@ -128,14 +128,14 @@ class StructuredLogType(Enum):
 
 @json_schema_type
 class SpanStartPayload(BaseModel):
-    type: Literal[StructuredLogType.SPAN_START.value] = StructuredLogType.SPAN_START.value
+    type: str = StructuredLogType.SPAN_START.value
     name: str
     parent_span_id: Optional[str] = None
 
 
 @json_schema_type
 class SpanEndPayload(BaseModel):
-    type: Literal[StructuredLogType.SPAN_END.value] = StructuredLogType.SPAN_END.value
+    type: str = StructuredLogType.SPAN_END.value
     status: SpanStatus
 
 
@@ -153,8 +153,8 @@ StructuredLogPayload = register_schema(
 
 @json_schema_type
 class StructuredLogEvent(EventCommon):
-    type: Literal[EventType.STRUCTURED_LOG.value] = EventType.STRUCTURED_LOG.value
-    payload: StructuredLogPayload
+    type: str = EventType.STRUCTURED_LOG.value
+    payload: Any  # Using Any to avoid forward reference issues
 
 
 Event = register_schema(
@@ -213,10 +213,9 @@ class QuerySpanTreeResponse(BaseModel):
 
 @runtime_checkable
 class Telemetry(Protocol):
-    @webmethod(route="/telemetry/events", method="POST")
-    async def log_event(self, event: Event, ttl_seconds: int = DEFAULT_TTL_DAYS * 86400) -> None: ...
+    # Using string annotations to avoid forward reference issues
+    async def log_event(self, event: Any, ttl_seconds: int = DEFAULT_TTL_DAYS * 86400) -> None: ...
 
-    @webmethod(route="/telemetry/traces", method="POST")
     async def query_traces(
         self,
         attribute_filters: Optional[List[QueryCondition]] = None,
@@ -225,13 +224,10 @@ class Telemetry(Protocol):
         order_by: Optional[List[str]] = None,
     ) -> QueryTracesResponse: ...
 
-    @webmethod(route="/telemetry/traces/{trace_id:path}", method="GET")
     async def get_trace(self, trace_id: str) -> Trace: ...
 
-    @webmethod(route="/telemetry/traces/{trace_id:path}/spans/{span_id:path}", method="GET")
     async def get_span(self, trace_id: str, span_id: str) -> Span: ...
 
-    @webmethod(route="/telemetry/spans/{span_id:path}/tree", method="POST")
     async def get_span_tree(
         self,
         span_id: str,
@@ -239,7 +235,6 @@ class Telemetry(Protocol):
         max_depth: Optional[int] = None,
     ) -> QuerySpanTreeResponse: ...
 
-    @webmethod(route="/telemetry/spans", method="POST")
     async def query_spans(
         self,
         attribute_filters: List[QueryCondition],
@@ -247,7 +242,6 @@ class Telemetry(Protocol):
         max_depth: Optional[int] = None,
     ) -> QuerySpansResponse: ...
 
-    @webmethod(route="/telemetry/spans/export", method="POST")
     async def save_spans_to_dataset(
         self,
         attribute_filters: List[QueryCondition],
