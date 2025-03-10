@@ -72,11 +72,12 @@ class LlmAsJudgeScoringImpl(
     async def score_batch(
         self,
         dataset_id: str,
-        scoring_functions: Dict[str, Optional[ScoringFnParams]] = None,
+        scoring_functions: "Optional[Dict[str, Optional[ScoringFnParams]]]" = None,
         save_results_dataset: bool = False,
     ) -> ScoreBatchResponse:
         dataset_def = await self.datasets_api.get_dataset(dataset_id=dataset_id)
-        validate_dataset_schema(dataset_def.dataset_schema, get_valid_schemas(Api.scoring.value))
+        if dataset_def:
+            validate_dataset_schema(dataset_def.dataset_schema, get_valid_schemas(Api.scoring.value))
 
         all_rows = await self.datasetio_api.get_rows_paginated(
             dataset_id=dataset_id,
@@ -98,9 +99,10 @@ class LlmAsJudgeScoringImpl(
     async def score(
         self,
         input_rows: List[Dict[str, Any]],
-        scoring_functions: Dict[str, Optional[ScoringFnParams]] = None,
+        scoring_functions: "Optional[Dict[str, Optional[ScoringFnParams]]]" = None,
     ) -> ScoreResponse:
         res = {}
+        scoring_functions = scoring_functions or {}
         for scoring_fn_id in scoring_functions.keys():
             if scoring_fn_id not in self.scoring_fn_id_impls:
                 raise ValueError(f"Scoring function {scoring_fn_id} is not supported.")

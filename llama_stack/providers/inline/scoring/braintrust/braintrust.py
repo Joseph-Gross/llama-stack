@@ -154,18 +154,20 @@ class BraintrustScoringImpl(
                 )
             self.config.openai_api_key = provider_data.openai_api_key
 
-        os.environ["OPENAI_API_KEY"] = self.config.openai_api_key
+        if self.config.openai_api_key:
+            os.environ["OPENAI_API_KEY"] = self.config.openai_api_key
 
     async def score_batch(
         self,
         dataset_id: str,
-        scoring_functions: Dict[str, Optional[ScoringFnParams]],
+        scoring_functions: "Dict[str, Optional[ScoringFnParams]]",
         save_results_dataset: bool = False,
     ) -> ScoreBatchResponse:
         await self.set_api_key()
 
         dataset_def = await self.datasets_api.get_dataset(dataset_id=dataset_id)
-        validate_dataset_schema(dataset_def.dataset_schema, get_valid_schemas(Api.scoring.value))
+        if dataset_def:
+            validate_dataset_schema(dataset_def.dataset_schema, get_valid_schemas(Api.scoring.value))
 
         all_rows = await self.datasetio_api.get_rows_paginated(
             dataset_id=dataset_id,
@@ -204,7 +206,7 @@ class BraintrustScoringImpl(
     async def score(
         self,
         input_rows: List[Dict[str, Any]],
-        scoring_functions: Dict[str, Optional[ScoringFnParams]],
+        scoring_functions: "Dict[str, Optional[ScoringFnParams]]",
     ) -> ScoreResponse:
         await self.set_api_key()
         res = {}
@@ -218,7 +220,7 @@ class BraintrustScoringImpl(
             # override scoring_fn params if provided
             if scoring_functions[scoring_fn_id] is not None:
                 override_params = scoring_functions[scoring_fn_id]
-                if override_params.aggregation_functions:
+                if override_params and override_params.aggregation_functions:
                     aggregation_functions = override_params.aggregation_functions
 
             agg_results = aggregate_metrics(score_results, aggregation_functions)
