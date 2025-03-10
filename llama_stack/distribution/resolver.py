@@ -132,7 +132,7 @@ async def resolve_impls(
 
             p = provider_registry[api][provider.provider_type]
             if p.deprecation_error:
-                log.error(p.deprecation_error, "red", attrs=["bold"])
+                log.error(f"{p.deprecation_error}")
                 raise InvalidProviderError(p.deprecation_error)
 
             elif p.deprecation_warning:
