@@ -102,7 +102,7 @@ class DownloadTask:
     output_file: str
     total_size: int = 0
     downloaded_size: int = 0
-    task_id: Optional[int] = None
+    task_id: Any = None  # Will hold the TaskID from rich.progress
     retries: int = 0
     max_retries: int = 3
 
@@ -159,7 +159,9 @@ class ParallelDownloader:
                     )
                     await asyncio.sleep(wait_time)
                     continue
-        raise last_exception
+        if last_exception is not None:
+            raise last_exception
+        raise RuntimeError("Retry failed but no exception was captured")
 
     async def get_file_info(self, client: httpx.AsyncClient, task: DownloadTask) -> None:
         async def _get_info():
@@ -301,7 +303,17 @@ class ParallelDownloader:
                     except Exception as e:
                         failed_tasks.append((task, str(e)))
 
-            await asyncio.gather(*(download_with_semaphore(task) for task in tasks))
+            # Use asyncio.gather with task cancellation handling
+            download_tasks = [download_with_semaphore(task) for task in tasks]
+            try:
+                await asyncio.gather(*download_tasks)
+            except asyncio.CancelledError:
+                # Handle task cancellation gracefully
+                self.console.print("[yellow]Download operation was cancelled[/yellow]")
+                for task in download_tasks:
+                    if not task.done():
+                        task.cancel()
+                raise
 
         if failed_tasks:
             self.console.print("\n[red]Some downloads failed:[/red]")
@@ -345,7 +357,7 @@ def _hf_download(
     except RepositoryNotFoundError:
         parser.error(f"Repository '{repo_id}' not found on the Hugging Face Hub.")
     except Exception as e:
-        parser.error(e)
+        parser.error(str(e))
 
     print(f"\nSuccessfully downloaded model to {true_output_dir}")
 
