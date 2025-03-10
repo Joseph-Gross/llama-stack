@@ -65,16 +65,18 @@ class JSONFormatter(logging.Formatter):
         }
         
         # Add context if available
-        if hasattr(record, "context") and record.context:
-            log_data["context"] = record.context
+        if hasattr(record, "context"):
+            log_data["context"] = getattr(record, "context", {})
         
         # Add exception info if available
         if record.exc_info:
-            log_data["exception"] = {
-                "type": record.exc_info[0].__name__,
-                "message": str(record.exc_info[1]),
-                "traceback": traceback.format_exception(*record.exc_info)
-            }
+            exc_type = record.exc_info[0]
+            if exc_type is not None:
+                log_data["exception"] = {
+                    "type": exc_type.__name__,
+                    "message": str(record.exc_info[1]),
+                    "traceback": traceback.format_exception(*record.exc_info)
+                }
         
         return json.dumps(log_data)
 

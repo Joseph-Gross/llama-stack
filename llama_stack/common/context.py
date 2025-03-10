@@ -9,17 +9,17 @@ import uuid
 from typing import Any, Dict, Optional
 
 # Context variables for tracking request context
-request_id_var = contextvars.ContextVar("request_id", default=None)
-trace_id_var = contextvars.ContextVar("trace_id", default=None)
+request_id_var = contextvars.ContextVar("request_id", default="")
+trace_id_var = contextvars.ContextVar("trace_id", default="")
 context_data_var = contextvars.ContextVar("context_data", default={})
 
 
-def get_request_id() -> Optional[str]:
+def get_request_id() -> str:
     """
     Get the current request ID from context.
     
     Returns:
-        The current request ID or None if not set
+        The current request ID or empty string if not set
     """
     return request_id_var.get()
 
@@ -34,15 +34,16 @@ def set_request_id(request_id: Optional[str] = None) -> None:
     if request_id is None:
         request_id = str(uuid.uuid4())
     
+    # Set the context variable with the request ID
     request_id_var.set(request_id)
 
 
-def get_trace_id() -> Optional[str]:
+def get_trace_id() -> str:
     """
     Get the current trace ID from context.
     
     Returns:
-        The current trace ID or None if not set
+        The current trace ID or empty string if not set
     """
     return trace_id_var.get()
 
@@ -57,6 +58,7 @@ def set_trace_id(trace_id: Optional[str] = None) -> None:
     if trace_id is None:
         trace_id = str(uuid.uuid4())
     
+    # Set the context variable with the trace ID
     trace_id_var.set(trace_id)
 
 
@@ -146,10 +148,13 @@ class ContextManager:
     def __exit__(self, exc_type, exc_val, exc_tb):
         # Restore previous context
         if self.prev_request_id is not None:
+            # Restore previous request ID
             request_id_var.set(self.prev_request_id)
         
         if self.prev_trace_id is not None:
+            # Restore previous trace ID
             trace_id_var.set(self.prev_trace_id)
         
         if self.prev_context_data is not None:
+            # Restore previous context data
             context_data_var.set(self.prev_context_data)
