@@ -86,7 +86,20 @@ async def global_exception_handler(request: Request, exc: Exception):
 
 def translate_exception(exc: Exception) -> Union[HTTPException, RequestValidationError]:
     if isinstance(exc, ValidationError):
-        exc = RequestValidationError(exc.raw_errors)
+        # Convert ValidationError to HTTPException directly
+        return HTTPException(
+            status_code=400,
+            detail={
+                "errors": [
+                    {
+                        "loc": list(err.loc_tuple()),
+                        "msg": err.msg,
+                        "type": err.type,
+                    }
+                    for err in exc.errors()
+                ]
+            },
+        )
 
     if isinstance(exc, RequestValidationError):
         return HTTPException(
