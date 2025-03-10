@@ -109,19 +109,41 @@ class TestSQLInjection:
                 status=StatusCode.OK,
             )
             
-            # Monkey patch the trace_id to be invalid
-            def format_invalid(*args, **kwargs):
+            # Create a mock span with invalid trace_id format
+            invalid_mock_span = ReadableSpan(
+                name="test_span",
+                context=SpanContext(
+                    trace_id=0x1234567890ABCDEF,
+                    span_id=0x1234567890AB,
+                    is_remote=False,
+                    trace_flags=1,
+                ),
+                parent=None,
+                resource={},
+                attributes={
+                    "invalid_trace": "invalid'; DROP TABLE traces; --"
+                },
+                events=[],
+                links=[],
+                kind=SpanKind.INTERNAL,
+                start_time=int(datetime.now().timestamp() * 1e9),
+                end_time=int(datetime.now().timestamp() * 1e9),
+                status=StatusCode.OK,
+            )
+            
+            # Patch the processor to test invalid trace_id validation
+            original_validate = processor._validate_id
+            def invalid_validate(*args, **kwargs):
                 return "invalid'; DROP TABLE traces; --"
-                
-            original_format = format
-            format = format_invalid  # Replace the format function temporarily
+            
+            processor._validate_id = invalid_validate
             
             # This should raise a ValueError due to invalid trace_id format
             with pytest.raises(ValueError):
-                processor.on_end(mock_span)
+                processor.on_end(invalid_mock_span)
                 
-            # Restore the original format function
-            format = original_format
+            # Restore the original validation function
+            processor._validate_id = original_validate
             
         finally:
             # Clean up
