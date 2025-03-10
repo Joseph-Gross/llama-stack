@@ -69,6 +69,7 @@ class ErrorHandlingMiddleware(BaseHTTPMiddleware):
         if isinstance(exc, LlamaStackException):
             # Handle known Llama Stack exceptions
             status_code = self._get_status_code_for_exception(exc)
+            # Access attributes that are specific to LlamaStackException
             error_response = {
                 "error": {
                     "code": exc.error_code,
