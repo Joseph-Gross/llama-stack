@@ -52,9 +52,19 @@ def set_request_provider_data(headers: Dict[str, str]):
         return
 
     try:
+        # Add size limit to prevent DoS attacks
+        if len(val) > 10000:  # 10KB limit
+            log.error("Provider data too large, rejecting")
+            return
+            
         val = json.loads(val)
+        
+        # Basic schema validation
+        if not isinstance(val, dict):
+            log.error("Provider data must be a JSON object")
+            return
     except json.JSONDecodeError:
-        log.error("Provider data not encoded as a JSON object!", val)
+        log.error("Provider data not encoded as a valid JSON object")
         return
 
     _THREAD_LOCAL.provider_data_header_value = val
