@@ -17,6 +17,7 @@ from typing import Any, Dict, Literal, Optional, Union
 # import all for backwards compatibility
 from llama_models.datatypes import *  # noqa: F403
 from pydantic import BaseModel, ConfigDict, Field, field_validator
+from llama_models.datatypes import ToolCall, BuiltinTool
 from typing_extensions import Annotated
 
 from llama_stack.schema_utils import json_schema_type, register_schema
@@ -78,7 +79,7 @@ SamplingStrategy = register_schema(
 
 @json_schema_type
 class SamplingParams(BaseModel):
-    strategy: SamplingStrategy = Field(default_factory=GreedySamplingStrategy)
+    strategy: "SamplingStrategy" = Field(default_factory=GreedySamplingStrategy)
 
     max_tokens: Optional[int] = 0
     repetition_penalty: Optional[float] = 1.0
