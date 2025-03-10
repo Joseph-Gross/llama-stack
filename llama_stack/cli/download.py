@@ -13,7 +13,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from functools import partial
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 import httpx
 from pydantic import BaseModel, ConfigDict
@@ -304,15 +304,11 @@ class ParallelDownloader:
                         failed_tasks.append((task, str(e)))
 
             # Use asyncio.gather with task cancellation handling
-            download_tasks = [download_with_semaphore(task) for task in tasks]
             try:
-                await asyncio.gather(*download_tasks)
+                await asyncio.gather(*(download_with_semaphore(task) for task in tasks))
             except asyncio.CancelledError:
                 # Handle task cancellation gracefully
                 self.console.print("[yellow]Download operation was cancelled[/yellow]")
-                for task in download_tasks:
-                    if not task.done():
-                        task.cancel()
                 raise
 
         if failed_tasks:
