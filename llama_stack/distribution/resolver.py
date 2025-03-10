@@ -243,7 +243,7 @@ async def resolve_impls(
 
 def topological_sort(
     providers_with_specs: Dict[str, List[ProviderWithSpec]],
-) -> List[ProviderWithSpec]:
+) -> List[tuple[str, ProviderWithSpec]]:
     def dfs(kv, visited: Set[str], stack: List[str]):
         api_str, providers = kv
         visited.add(api_str)
@@ -266,7 +266,7 @@ def topological_sort(
         if api_str not in visited:
             dfs((api_str, providers), visited, stack)
 
-    flattened = []
+    flattened: List[tuple[str, ProviderWithSpec]] = []
     for api_str in stack:
         for provider in providers_with_specs[api_str]:
             flattened.append((api_str, provider))
@@ -299,7 +299,8 @@ async def instantiate_provider(
 
         config = None
         routing_table_api = provider_spec.routing_table_api
-        args = [provider_spec.api, deps[routing_table_api], deps]
+        # Convert Api enum to string key for dictionary lookup
+        args = [provider_spec.api, deps[routing_table_api.value], deps]
     elif isinstance(provider_spec, RoutingTableProviderSpec):
         method = "get_routing_table_impl"
 
