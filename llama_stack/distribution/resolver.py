@@ -132,7 +132,7 @@ async def resolve_impls(
 
             p = provider_registry[api][provider.provider_type]
             if p.deprecation_error:
-                log.error(p.deprecation_error, "red", attrs=["bold"])
+                log.error(p.deprecation_error)
                 raise InvalidProviderError(p.deprecation_error)
 
             elif p.deprecation_warning:
@@ -189,26 +189,24 @@ async def resolve_impls(
 
     sorted_providers = topological_sort({k: v.values() for k, v in providers_with_specs.items()})
     apis = [x[1].spec.api for x in sorted_providers]
-    sorted_providers.append(
-        (
-            "inspect",
-            ProviderWithSpec(
-                provider_id="__builtin__",
-                provider_type="__builtin__",
-                config={
-                    "run_config": run_config.dict(),
-                },
-                spec=InlineProviderSpec(
-                    api=Api.inspect,
-                    provider_type="__builtin__",
-                    config_class="llama_stack.distribution.inspect.DistributionInspectConfig",
-                    module="llama_stack.distribution.inspect",
-                    api_dependencies=apis,
-                    deps__=([x.value for x in apis]),
-                ),
-            ),
-        )
+    # Add inspect provider
+    inspect_provider = ProviderWithSpec(
+        provider_id="__builtin__",
+        provider_type="__builtin__",
+        config={
+            "run_config": run_config.dict(),
+        },
+        spec=InlineProviderSpec(
+            api=Api.inspect,
+            provider_type="__builtin__",
+            config_class="llama_stack.distribution.inspect.DistributionInspectConfig",
+            module="llama_stack.distribution.inspect",
+            api_dependencies=apis,
+            deps__=([x.value for x in apis]),
+        ),
     )
+    # Add inspect provider to the list
+    sorted_providers.append(("inspect", inspect_provider))
 
     log.info(f"Resolved {len(sorted_providers)} providers")
     for api_str, provider in sorted_providers:
@@ -300,7 +298,8 @@ async def instantiate_provider(
         method = "get_auto_router_impl"
 
         config = None
-        args = [provider_spec.api, deps[provider_spec.routing_table_api], deps]
+        routing_table_api = provider_spec.routing_table_api
+        args = [provider_spec.api, deps[routing_table_api], deps]
     elif isinstance(provider_spec, RoutingTableProviderSpec):
         method = "get_routing_table_impl"
 
