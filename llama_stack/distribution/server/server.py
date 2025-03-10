@@ -308,6 +308,55 @@ class TracingMiddleware:
             await end_trace()
 
 
+class RateLimitMiddleware:
+    def __init__(self, app):
+        self.app = app
+        self.request_counts = {}
+        self.last_reset = time.time()
+        self.rate_limit = int(os.environ.get("LLAMA_STACK_RATE_LIMIT", "100"))  # requests per minute
+        self.rate_window = 60  # seconds
+        self.lock = asyncio.Lock()
+
+    async def __call__(self, scope, receive, send):
+        if scope["type"] == "http":
+            # Get client IP
+            client_ip = self._get_client_ip(scope)
+            
+            # Reset counters if window has passed
+            current_time = time.time()
+            if current_time - self.last_reset > self.rate_window:
+                async with self.lock:
+                    if current_time - self.last_reset > self.rate_window:
+                        self.request_counts = {}
+                        self.last_reset = current_time
+            
+            # Check rate limit
+            async with self.lock:
+                self.request_counts[client_ip] = self.request_counts.get(client_ip, 0) + 1
+                if self.request_counts[client_ip] > self.rate_limit:
+                    return await self._rate_limited_response(send)
+                    
+        return await self.app(scope, receive, send)
+        
+    def _get_client_ip(self, scope):
+        headers = dict(scope.get("headers", []))
+        forwarded_for = headers.get(b"x-forwarded-for", b"").decode()
+        if forwarded_for:
+            return forwarded_for.split(",")[0].strip()
+        return scope.get("client", ["0.0.0.0"])[0]
+        
+    async def _rate_limited_response(self, send):
+        await send({
+            "type": "http.response.start",
+            "status": 429,
+            "headers": [(b"content-type", b"application/json")],
+        })
+        await send({
+            "type": "http.response.body",
+            "body": json.dumps({"error": {"message": "Rate limit exceeded. Please try again later."}}).encode(),
+        })
+
+
 class ClientVersionMiddleware:
     def __init__(self, app):
         self.app = app
