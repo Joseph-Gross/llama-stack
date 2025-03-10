@@ -16,6 +16,7 @@ import sys
 import time
 import traceback
 import warnings
+from typing import Any, Dict, Optional, Union
 from contextlib import asynccontextmanager
 from importlib.metadata import version as parse_version
 from pathlib import Path
@@ -243,6 +244,26 @@ async def sse_generator(event_gen):
 def create_dynamic_typed_route(func: Any, method: str, route: str):
     async def endpoint(request: Request, **kwargs):
         set_request_provider_data(request.headers)
+
+        # Validate request data
+        if method == "post" and request.headers.get("content-type", "").startswith("application/json"):
+            try:
+                # Limit request body size to prevent DoS attacks
+                body_bytes = await request.body()
+                if len(body_bytes) > 10 * 1024 * 1024:  # 10MB limit
+                    raise HTTPException(status_code=413, detail="Request body too large")
+                
+                # Validate JSON structure
+                if body_bytes:
+                    try:
+                        json_data = json.loads(body_bytes)
+                        if not isinstance(json_data, dict):
+                            raise HTTPException(status_code=400, detail="Request body must be a JSON object")
+                    except json.JSONDecodeError:
+                        raise HTTPException(status_code=400, detail="Invalid JSON in request body")
+            except Exception as e:
+                traceback.print_exception(e)
+                raise translate_exception(e) from e
 
         is_streaming = is_streaming_request(func.__name__, request, **kwargs)
         try:
