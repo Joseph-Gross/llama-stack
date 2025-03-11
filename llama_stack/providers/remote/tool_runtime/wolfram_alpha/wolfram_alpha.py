@@ -73,12 +73,17 @@ class WolframAlphaToolRuntimeImpl(ToolsProtocolPrivate, ToolRuntime, NeedsReques
             "format": "plaintext",
             "output": "json",
         }
-        response = requests.get(
-            self.url,
-            params=params,
-        )
-
-        return ToolInvocationResult(content=json.dumps(self._clean_wolfram_alpha_response(response.json())))
+        try:
+            response = requests.get(
+                self.url,
+                params=params,
+                timeout=10,  # Add timeout for security
+                verify=True,  # Enforce SSL verification
+            )
+            response.raise_for_status()  # Raise exception for HTTP errors
+            return ToolInvocationResult(content=json.dumps(self._clean_wolfram_alpha_response(response.json())))
+        except requests.exceptions.RequestException as e:
+            return ToolInvocationResult(content=json.dumps({"error": f"Wolfram Alpha request failed: {str(e)}"}), error=True)
 
     def _clean_wolfram_alpha_response(self, wa_response):
         remove = {

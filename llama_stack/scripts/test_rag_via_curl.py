@@ -54,7 +54,12 @@ class TestRAGToolEndpoints:
             "embedding_dimension": 384,
         }
 
-        response = requests.post(f"{base_url}/vector-dbs", json=vector_db_payload)
+        response = requests.post(
+            f"{base_url}/vector-dbs", 
+            json=vector_db_payload,
+            timeout=10,  # Add timeout for security
+            verify=True,  # Enforce SSL verification
+        )
         assert response.status_code == 200
         vector_db = VectorDB(**response.json())
 
@@ -67,6 +72,8 @@ class TestRAGToolEndpoints:
         response = requests.post(
             f"{base_url}/tool-runtime/rag-tool/insert-documents",
             json=insert_payload,
+            timeout=10,  # Add timeout for security
+            verify=True,  # Enforce SSL verification
         )
         assert response.status_code == 200
 
@@ -86,6 +93,8 @@ class TestRAGToolEndpoints:
         response = requests.post(
             f"{base_url}/tool-runtime/rag-tool/query-context",
             json=query_payload,
+            timeout=10,  # Add timeout for security
+            verify=True,  # Enforce SSL verification
         )
         assert response.status_code == 200
         result = response.json()
@@ -97,5 +106,9 @@ class TestRAGToolEndpoints:
         assert "Python" in content_str
 
         # Clean up: Delete the vector DB
-        response = requests.delete(f"{base_url}/vector-dbs/{vector_db.identifier}")
+        response = requests.delete(
+            f"{base_url}/vector-dbs/{vector_db.identifier}",
+            timeout=10,  # Add timeout for security
+            verify=True,  # Enforce SSL verification
+        )
         assert response.status_code == 200

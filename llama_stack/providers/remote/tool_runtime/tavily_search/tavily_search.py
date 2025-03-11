@@ -66,12 +66,17 @@ class TavilySearchToolRuntimeImpl(ToolsProtocolPrivate, ToolRuntime, NeedsReques
 
     async def invoke_tool(self, tool_name: str, kwargs: Dict[str, Any]) -> ToolInvocationResult:
         api_key = self._get_api_key()
-        response = requests.post(
-            "https://api.tavily.com/search",
-            json={"api_key": api_key, "query": kwargs["query"]},
-        )
-
-        return ToolInvocationResult(content=json.dumps(self._clean_tavily_response(response.json())))
+        try:
+            response = requests.post(
+                "https://api.tavily.com/search",
+                json={"api_key": api_key, "query": kwargs["query"]},
+                timeout=10,  # Add timeout for security
+                verify=True,  # Enforce SSL verification
+            )
+            response.raise_for_status()  # Raise exception for HTTP errors
+            return ToolInvocationResult(content=json.dumps(self._clean_tavily_response(response.json())))
+        except requests.exceptions.RequestException as e:
+            return ToolInvocationResult(content=json.dumps({"error": f"Search request failed: {str(e)}"}), error=True)
 
     def _clean_tavily_response(self, search_response, top_k=3):
         return {"query": search_response["query"], "top_k": search_response["results"]}

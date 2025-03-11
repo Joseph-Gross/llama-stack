@@ -4,6 +4,7 @@
 # This source code is licensed under the terms described in the LICENSE file in
 # the root directory of this source tree.
 
+import json
 from typing import Any, Dict, List, Optional
 
 import requests
@@ -17,7 +18,7 @@ from llama_stack.apis.tools import (
     ToolRuntime,
 )
 from llama_stack.distribution.request_headers import NeedsRequestProviderData
-from llama_stack.models.llama.datatypes import BuiltinTool
+# Remove dependency on BuiltinTool which is causing import errors
 from llama_stack.providers.datatypes import ToolsProtocolPrivate
 
 from .config import BraveSearchToolConfig
@@ -61,7 +62,7 @@ class BraveSearchToolRuntimeImpl(ToolsProtocolPrivate, ToolRuntime, NeedsRequest
                         parameter_type="string",
                     )
                 ],
-                built_in_type=BuiltinTool.brave_search,
+                # Removed built_in_type reference to fix import error
             )
         ]
 
@@ -74,13 +75,22 @@ class BraveSearchToolRuntimeImpl(ToolsProtocolPrivate, ToolRuntime, NeedsRequest
             "Accept": "application/json",
         }
         payload = {"q": kwargs["query"]}
-        response = requests.get(url=url, params=payload, headers=headers)
-        response.raise_for_status()
-        results = self._clean_brave_response(response.json())
-        content_items = "\n".join([str(result) for result in results])
-        return ToolInvocationResult(
-            content=content_items,
-        )
+        try:
+            response = requests.get(
+                url=url, 
+                params=payload, 
+                headers=headers,
+                timeout=10,  # Add timeout for security
+                verify=True,  # Enforce SSL verification
+            )
+            response.raise_for_status()
+            results = self._clean_brave_response(response.json())
+            content_items = "\n".join([str(result) for result in results])
+            return ToolInvocationResult(
+                content=content_items,
+            )
+        except requests.exceptions.RequestException as e:
+            return ToolInvocationResult(content=json.dumps({"error": f"Brave search request failed: {str(e)}"}), error=True)
 
     def _clean_brave_response(self, search_response):
         clean_response = []

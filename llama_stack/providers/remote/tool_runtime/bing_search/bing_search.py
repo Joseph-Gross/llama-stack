@@ -77,12 +77,17 @@ class BingSearchToolRuntimeImpl(ToolsProtocolPrivate, ToolRuntime, NeedsRequestP
             "q": kwargs["query"],
         }
 
-        response = requests.get(
-            url=self.url,
-            params=params,
-            headers=headers,
-        )
-        response.raise_for_status()
+        try:
+            response = requests.get(
+                url=self.url,
+                params=params,
+                headers=headers,
+                timeout=10,  # Add timeout for security
+                verify=True,  # Enforce SSL verification
+            )
+            response.raise_for_status()
+        except requests.exceptions.RequestException as e:
+            return ToolInvocationResult(content=json.dumps({"error": f"Bing search request failed: {str(e)}"}), error=True)
 
         return ToolInvocationResult(content=json.dumps(self._clean_response(response.json())))
 
