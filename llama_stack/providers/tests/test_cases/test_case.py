@@ -12,6 +12,7 @@ class TestCase:
     _apis = [
         "inference/chat_completion",
         "inference/completion",
+        "inference/financial_services",
     ]
     _jsonblob = {}
 

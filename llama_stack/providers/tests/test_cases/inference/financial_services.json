@@ -1,0 +1,93 @@
+{
+    "transaction_validation": {
+        "data": {
+            "notes": "Test case for transaction validation with complete details",
+            "messages": [
+                {
+                    "role": "system",
+                    "content": "You are a financial transaction processing assistant. Validate and process transaction details according to banking regulations."
+                },
+                {
+                    "role": "user",
+                    "content": "Process this transaction: Transfer $500 from account 12345678 to account 87654321 on March 15, 2023."
+                }
+            ],
+            "expected": {
+                "transaction_id": "TX123456789",
+                "amount": 500.0,
+                "currency": "USD",
+                "timestamp": "2023-03-15T00:00:00",
+                "account_number": "12345678",
+                "transaction_type": "transfer",
+                "status": "pending"
+            }
+        }
+    },
+    "compliance_check": {
+        "data": {
+            "notes": "Test case for compliance verification of a high-risk transaction",
+            "messages": [
+                {
+                    "role": "system",
+                    "content": "You are a compliance verification assistant for a bank. Analyze transactions for regulatory compliance and risk."
+                },
+                {
+                    "role": "user",
+                    "content": "Verify compliance for a $9,500 cash deposit to account 98765432 from a new customer with incomplete documentation."
+                }
+            ],
+            "expected": {
+                "is_kyc_verified": false,
+                "risk_score": 85.0,
+                "transaction_limit_exceeded": false,
+                "suspicious_activity_detected": true,
+                "compliance_status": "review_required"
+            }
+        }
+    },
+    "fraud_detection": {
+        "data": {
+            "notes": "Test case for fraud detection on a suspicious transaction",
+            "messages": [
+                {
+                    "role": "system",
+                    "content": "You are a fraud detection assistant for a financial institution. Analyze transactions for potential fraud."
+                },
+                {
+                    "role": "user",
+                    "content": "Analyze this transaction: $3,000 purchase from an online electronics store in a foreign country, using a credit card that normally only has small local transactions."
+                }
+            ],
+            "expected": {
+                "fraud_score": 78.5,
+                "is_fraudulent": true,
+                "confidence": 0.85,
+                "detection_rules_triggered": ["unusual_location", "amount_threshold", "pattern_deviation"],
+                "recommended_action": "review"
+            }
+        }
+    },
+    "account_summary": {
+        "data": {
+            "notes": "Test case for retrieving account summary information",
+            "messages": [
+                {
+                    "role": "system",
+                    "content": "You are a banking assistant. Provide account information and summaries to customers."
+                },
+                {
+                    "role": "user",
+                    "content": "Get me a summary of my checking account #CH123456789."
+                }
+            ],
+            "expected": {
+                "account_id": "CH123456789",
+                "account_type": "checking",
+                "balance": 2500.75,
+                "currency": "USD",
+                "account_status": "active",
+                "last_transaction_date": "2023-03-10T14:30:45"
+            }
+        }
+    }
+}
