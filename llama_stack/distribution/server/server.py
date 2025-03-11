@@ -382,6 +382,33 @@ def main():
 
     app = FastAPI(lifespan=lifespan)
     app.add_middleware(TracingMiddleware)
+    
+    # Add rate limiting middleware
+    if not os.environ.get("LLAMA_STACK_DISABLE_RATE_LIMIT"):
+        app.add_middleware(
+            RateLimitMiddleware,
+            limit=int(os.environ.get("LLAMA_STACK_RATE_LIMIT", "100")),
+            window=int(os.environ.get("LLAMA_STACK_RATE_WINDOW", "60"))
+        )
+    
+    # Add security headers middleware
+    if not os.environ.get("LLAMA_STACK_DISABLE_SECURITY_HEADERS"):
+        app.add_middleware(SecurityHeadersMiddleware)
+    
+    # Add request validation middleware
+    app.add_middleware(RequestValidationMiddleware)
+    
+    # Add CORS middleware with secure defaults
+    if not os.environ.get("LLAMA_STACK_DISABLE_CORS"):
+        origins = os.environ.get("LLAMA_STACK_CORS_ORIGINS", "").split(",")
+        app.add_middleware(
+            CORSMiddleware,
+            allow_origins=origins if origins and origins[0] else [],
+            allow_credentials=False,
+            allow_methods=["GET", "POST"],
+            allow_headers=["*"],
+        )
+    
     if not os.environ.get("LLAMA_STACK_DISABLE_VERSION_CHECK"):
         app.add_middleware(ClientVersionMiddleware)
 

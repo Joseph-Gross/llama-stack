@@ -1,0 +1,39 @@
+name: Dependency Vulnerability Check
+
+on:
+  schedule:
+    - cron: '0 0 * * 0'  # Run weekly
+  workflow_dispatch:  # Allow manual triggering
+
+jobs:
+  dependency-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+          
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install safety pip-audit
+          
+      - name: Run dependency vulnerability scan
+        run: |
+          pip-audit -r requirements.txt
+          safety check -r requirements.txt
+          
+      - name: Generate vulnerability report
+        if: always()
+        run: |
+          pip-audit -r requirements.txt -o json > vulnerability-report.json
+          
+      - name: Upload vulnerability report
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: vulnerability-report
+          path: vulnerability-report.json
